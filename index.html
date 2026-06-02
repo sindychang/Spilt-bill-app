@@ -166,9 +166,10 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
 .empty p{font-size:14px;line-height:1.6}
 .sync-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:2px}
 .sync-dot.ok{background:var(--green)}.sync-dot.err{background:var(--red)}
-.sync-dot.ing{background:var(--amber);animation:fbpulse .9s infinite}
+.sync-dot.ing{background:var(--amber);animation:fbp .9s infinite}
 .sync-dot.off{background:var(--border)}
-@keyframes fbpulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes fbp{0%,100%{opacity:1}50%{opacity:.35}}
+.sync-badge{font-size:10px;color:rgba(255,255,255,.75);font-weight:500;white-space:nowrap;margin-left:2px}
 #toast{position:fixed;bottom:calc(var(--nav-h)+70px);left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;padding:9px 20px;border-radius:20px;font-size:13px;font-weight:500;opacity:0;transition:opacity .25s;pointer-events:none;z-index:999;white-space:nowrap}
 #toast.show{opacity:1}
 /* import format note */
@@ -182,9 +183,12 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
 <div id="sc-home" class="screen active">
   <div class="topbar">
     <div class="tb-left">
-      <div style="display:flex;align-items:center;gap:5px">
+      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
         <div class="tb-tag" id="h-group-tag">我的群組</div>
-        <div class="sync-dot off" id="sync-dot" title="同步狀態"></div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <div class="sync-dot off" id="sync-dot"></div>
+          <span class="sync-badge" id="sync-badge" style="color:var(--muted)"></span>
+        </div>
       </div>
       <div class="tb-title">總覽</div>
     </div>
@@ -308,14 +312,23 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
     <div class="card">
       <div class="ct">跨裝置同步</div>
       <div class="fg" style="margin-bottom:10px">
-        <label class="flbl">房間代碼（兩台裝置輸入相同代碼即可即時同步）</label>
+        <label class="flbl">房間代碼（兩台裝置相同代碼即可即時同步）</label>
         <div style="display:flex;gap:8px;margin-top:6px">
           <input type="text" id="room-inp" placeholder="輸入房間代碼…" style="flex:1">
-          <button class="btn bghost bsm" onclick="navigator.clipboard.writeText(document.getElementById('room-inp').value).then(()=>toast('已複製'))" title="複製代碼">複製</button>
+          <button class="btn bghost bsm" onclick="navigator.clipboard.writeText(document.getElementById('room-inp').value).then(()=>toast('已複製'))" title="複製">複製</button>
           <button class="btn bprimary bsm" onclick="applyRoomCode()">連線</button>
         </div>
       </div>
-      <div id="sync-status-text" style="font-size:12px;color:var(--muted)">初始化中…</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+        <div id="sync-status-text" style="font-size:12px;color:var(--muted)">初始化中…</div>
+        <div id="sync-time-label" style="font-size:11px;color:var(--muted);display:none">
+          最後同步：<span id="sync-time-settings" style="font-weight:600;color:var(--text)">--</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn bsm" onclick="forceUpload()" style="flex:1;background:var(--blue-soft);color:var(--blue);border:1.5px solid #BFDBFE;font-weight:700">↑ 強制上傳本機資料</button>
+        <button class="btn bsm bdanger" onclick="leaveRoom()">登出房間</button>
+      </div>
     </div>
     <div class="card">
       <div class="srow">
@@ -455,10 +468,9 @@ function save(){
   localStorage.setItem('splitbill_v3',JSON.stringify(S));
   if(db&&roomCode){
     _skipNext=true;
-    db.ref('rooms/'+roomCode).set(S).catch(e=>{
-      _skipNext=false;
-      setSyncStatus('err','同步失敗：'+e.message);
-    });
+    db.ref('rooms/'+roomCode).set(S)
+      .then(()=>{const t=Date.now();_updateSyncUI(t);setSyncStatus('ok','已同步');})
+      .catch(e=>{_skipNext=false;setSyncStatus('err','同步失敗');});
   }
 }
 
@@ -1015,10 +1027,9 @@ ${d.members.length} 位成員・${d.expenses.length} 筆支出
   document.getElementById('json-fi').value='';
 }
 
-// ═══════════════════════════════════════════════════════════════
-// FIREBASE CONFIG
-// ★ 請將下方的值換成你自己的 Firebase 設定 ★
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// FIREBASE CONFIG  ★ 換成你的設定 ★
+// ══════════════════════════════════════════════════════
 const firebaseConfig = {
   apiKey: "AIzaSyCv7q6D7Dk8vLfIL8QhZKp_bMWnocZx-nw",
   authDomain: "spilt-bill-1b05f.firebaseapp.com",
@@ -1030,17 +1041,16 @@ const firebaseConfig = {
   measurementId: "G-ZWQYGL1L1F"
 };
 
-// ★ 預設房間代碼：所有裝置開啟 App 時自動同步到這個房間
-// 可自行修改成任意字串，與對方共用同一個代碼即可
+// ★ 預設房間代碼（所有裝置開啟自動同步到此）★
 const DEFAULT_ROOM = 'sindy-jack-splitbill';
 
 let db=null, syncListener=null, _skipNext=false;
 let roomCode=localStorage.getItem('splitbill_room')||DEFAULT_ROOM;
-// 確保 localStorage 也存一份（方便之後查看/修改）
 if(!localStorage.getItem('splitbill_room')&&DEFAULT_ROOM){
   localStorage.setItem('splitbill_room',DEFAULT_ROOM);
 }
 
+// ── Firebase 初始化 ──────────────────────────────────
 function initFirebase(){
   if(!firebaseConfig.apiKey||firebaseConfig.apiKey==='YOUR_API_KEY'){
     setSyncStatus('off','尚未設定 Firebase（離線模式）');return;
@@ -1048,10 +1058,9 @@ function initFirebase(){
   try{
     if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
     db=firebase.database();
-    setSyncStatus('off','Firebase 已初始化');
     if(roomCode) startRoomSync();
+    else setSyncStatus('off','請設定房間代碼');
   }catch(e){
-    console.warn('Firebase:',e);
     setSyncStatus('err','Firebase 初始化失敗');
   }
 }
@@ -1062,12 +1071,11 @@ function startRoomSync(){
   setSyncStatus('ing','連線中…');
   const ref=db.ref('rooms/'+roomCode);
   syncListener=ref.on('value',snap=>{
-    if(_skipNext){_skipNext=false;setSyncStatus('ok','已同步・'+roomCode);return;}
+    if(_skipNext){_skipNext=false;const t=Date.now();_updateSyncUI(t);setSyncStatus('ok','已同步');return;}
     const d=snap.val();
     if(d&&Array.isArray(d.expenses)){
       S={members:[],expenses:[],currency:'NT$',groupName:'我的群組',avatars:{},...d};
       localStorage.setItem('splitbill_v3',JSON.stringify(S));
-      // refresh current screen
       const sc=document.querySelector('.screen.active')?.id;
       renderHome();renderRecords();
       if(sc==='sc-stats')renderStats();
@@ -1075,16 +1083,13 @@ function startRoomSync(){
         document.getElementById('cur-sel').value=S.currency;
         document.getElementById('grp-inp').value=S.groupName;}
     }
-    setSyncStatus('ok','已同步・'+roomCode);
-  },err=>{
-    setSyncStatus('err','同步錯誤：'+err.message);
-  });
+    const t=Date.now();_updateSyncUI(t);setSyncStatus('ok','已同步');
+  },err=>{setSyncStatus('err','同步失敗');});
 }
 
 function stopRoomSync(){
   if(syncListener&&db&&roomCode){
-    db.ref('rooms/'+roomCode).off('value',syncListener);
-    syncListener=null;
+    db.ref('rooms/'+roomCode).off('value',syncListener);syncListener=null;
   }
 }
 
@@ -1092,18 +1097,61 @@ function applyRoomCode(){
   const v=document.getElementById('room-inp').value.trim();
   if(!v){toast('請輸入房間代碼');return;}
   if(!db){toast('Firebase 尚未設定，請先填入 firebaseConfig');return;}
-  stopRoomSync();
-  roomCode=v;
+  stopRoomSync();roomCode=v;
   localStorage.setItem('splitbill_room',roomCode);
-  startRoomSync();
-  toast('✓ 已連線房間：'+roomCode);
+  startRoomSync();toast('✓ 已連線房間：'+roomCode);
 }
 
+// ── 同步狀態 ────────────────────────────────────────
 function setSyncStatus(state,msg){
   const dot=document.getElementById('sync-dot');
   const txt=document.getElementById('sync-status-text');
   if(dot)dot.className='sync-dot '+state;
   if(txt)txt.textContent=msg||'';
+}
+
+function _updateSyncUI(ts){
+  if(!ts)return;
+  const d=new Date(ts);
+  const isToday=d.toDateString()===new Date().toDateString();
+  const timeStr=d.toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'});
+  const dateStr=d.toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'});
+  const shortStr=isToday?timeStr:dateStr;
+  const fullStr=(isToday?'今天 ':''+dateStr+' ')+timeStr;
+  // topbar badge (小)
+  const badge=document.getElementById('sync-badge');
+  if(badge)badge.textContent=shortStr;
+  // 設定頁顯示完整時間
+  const settingsTime=document.getElementById('sync-time-settings');
+  const settingsLabel=document.getElementById('sync-time-label');
+  if(settingsTime)settingsTime.textContent=fullStr;
+  if(settingsLabel)settingsLabel.style.display='block';
+  localStorage.setItem('splitbill_lastSync',String(ts));
+}
+
+// ── 強制上傳本機資料 ─────────────────────────────────
+function forceUpload(){
+  if(!db||!roomCode){toast('尚未連線 Firebase');return;}
+  if(!confirm('確定以此裝置的資料覆蓋雲端？\n另一台裝置的資料將被覆蓋。'))return;
+  setSyncStatus('ing','上傳中…');_skipNext=true;
+  db.ref('rooms/'+roomCode).set(S)
+    .then(()=>{const t=Date.now();_updateSyncUI(t);setSyncStatus('ok','已上傳');toast('✓ 已強制上傳本機資料');})
+    .catch(e=>{_skipNext=false;setSyncStatus('err','上傳失敗');toast('上傳失敗：'+e.message);});
+}
+
+// ── 登出房間（清除快取）────────────────────────────────
+function leaveRoom(){
+  if(!confirm('確定登出房間並清除同步快取？\n本機資料不會刪除，重新輸入代碼可再次同步。'))return;
+  stopRoomSync();
+  roomCode='';db=null;
+  localStorage.removeItem('splitbill_room');
+  localStorage.removeItem('splitbill_lastSync');
+  setSyncStatus('off','已登出房間');
+  const badge=document.getElementById('sync-badge');if(badge)badge.textContent='';
+  const settingsLabel=document.getElementById('sync-time-label');
+  if(settingsLabel)settingsLabel.style.display='none';
+  const inp=document.getElementById('room-inp');if(inp)inp.value='';
+  toast('已登出房間');
 }
 
 // ── TOAST & HELPERS ────────────────────────────────────────────
@@ -1116,6 +1164,8 @@ load();
 curMonth=new Date();statMonth=new Date();
 renderHome();renderRecords();
 initFirebase();
+const _lsT=localStorage.getItem('splitbill_lastSync');
+if(_lsT)_updateSyncUI(parseInt(_lsT));
 </script>
 </body>
 </html>

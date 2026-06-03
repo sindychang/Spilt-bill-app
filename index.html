@@ -98,6 +98,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Noto
 .ri-amt{font-size:15px;font-weight:700}
 .ri-payer{font-size:11px;color:var(--muted);margin-top:2px}
 .ri.settle-rec .ri-name{color:var(--settle)}
+.payer-badge{display:inline-block;margin-top:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
 .bar-chart{display:flex;align-items:flex-end;gap:6px;height:72px}
 .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:0;position:relative}
 .bar-fill{width:100%;background:var(--blue-soft);border-radius:6px 6px 0 0;min-height:4px;position:relative}
@@ -676,7 +677,7 @@ function renderRecords(){
       const c=CAT[exp.cat]||CAT.other,isS=exp.type==='settlement';
       const _warn=hasDiscrepancy(exp)?'<div class="ri-warn">!</div>':'';
       const _icon=catIcon(exp.cat||'other').replace('</div>',_warn+'</div>');
-      return`<div class="ri${isS?' settle-rec':''}" onclick="openAddModal('${exp.id}')">${_icon}<div class="ri-body"><div class="ri-name">${exp.name}</div><div class="ri-sub">${c.label}${exp.notes?' · '+exp.notes:''}</div></div><div class="ri-right"><div class="ri-amt">${S.currency}${exp.amount.toLocaleString()}</div>${!isS?`<div class="ri-payer">${exp.payer} 付款</div>`:''}</div></div>`;
+      return`<div class="ri${isS?' settle-rec':''}" onclick="openAddModal('${exp.id}')">${_icon}<div class="ri-body"><div class="ri-name">${exp.name}</div><div class="ri-sub">${c.label}${exp.notes?' · '+exp.notes:''}</div></div><div class="ri-right"><div class="ri-amt">${S.currency}${exp.amount.toLocaleString()}</div>${!isS?`<div class="payer-badge" style="background:${payerColor(exp.payer).bg};color:${payerColor(exp.payer).color}">${exp.payer} 付款</div>`:''}</div></div>`;
     }).join('');
     return`<div class="dglbl">${y}年${parseInt(m)}月${parseInt(d)}日</div><div class="card" style="padding:4px 14px">${rows}</div>`;
   }).join('');
@@ -948,8 +949,7 @@ function parseNewFmt(raw,header){
     const rate=rateCol>=0?(parseFloat(row[rateCol])||1):1;
 
     let date='';
-    if(dateRaw instanceof Date)date=dateRaw.toISOString().slice(0,10);
-    else if(dateRaw){const d=new Date(String(dateRaw).replace(/\//g,'-'));date=isNaN(d.getTime())?String(dateRaw):d.toISOString().slice(0,10);}
+    date=parseDateStr(dateRaw);
 
     const amount=(parseFloat(amtRaw)||0)*rate;
 
@@ -998,8 +998,7 @@ function parseOldFmt(raw){
   raw.slice(start).forEach(row=>{
     if(!row[0]&&!row[1]&&!row[2])return;
     let date='';
-    if(row[0] instanceof Date)date=row[0].toISOString().slice(0,10);
-    else if(row[0]){const d=new Date(String(row[0]).replace(/\//g,'-'));date=isNaN(d.getTime())?String(row[0]):d.toISOString().slice(0,10);}
+    date=parseDateStr(row[0]);
     const name=String(row[1]||'').trim(),amount=parseFloat(row[2]),payer=String(row[3]||'').trim();
     const splitRaw=row[4]?String(row[4]).split(/[,，、]/).map(s=>s.trim()).filter(Boolean):[];
     const errs=[];if(!date)errs.push('日期');if(!name)errs.push('品項');if(isNaN(amount)||amount<=0)errs.push('金額');if(!payer)errs.push('付款人');
@@ -1442,7 +1441,40 @@ function renderGroupPicker(){
     </div>`).join('');
 }
 
-// ── TOAST & HELPERS ────────────────────────────────────────────
+
+// ── 付款人膠囊顏色 ────────────────────────────────────────
+const PAYER_PALETTE=[
+  {bg:'#FAF0ED',color:'#B84C3C'}, // 赤陶
+  {bg:'#F0FDFA',color:'#0D9488'}, // 青綠
+  {bg:'#EFF6FF',color:'#2563EB'}, // 藍
+  {bg:'#F5F3FF',color:'#7C3AED'}, // 紫
+  {bg:'#F0FDF4',color:'#15803D'}, // 綠
+  {bg:'#FFFBEB',color:'#B45309'}, // 琥珀
+];
+const _payerColorMap={};let _payerColorIdx=0;
+function payerColor(name){
+  if(!_payerColorMap[name])_payerColorMap[name]=PAYER_PALETTE[_payerColorIdx++%PAYER_PALETTE.length];
+  return _payerColorMap[name];
+}
+// ── TOAST & HELPERS ──
+// 將 Date 物件轉為 YYYY-MM-DD（使用本地時區，避免 UTC 差一天問題）
+function localDateStr(d){
+  if(!(d instanceof Date)||isNaN(d.getTime()))return'';
+  const y=d.getFullYear();
+  const m=String(d.getMonth()+1).padStart(2,'0');
+  const day=String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+// 解析任意日期字串為 YYYY-MM-DD（直接抓數字，不走 Date constructor）
+function parseDateStr(raw){
+  if(raw instanceof Date)return localDateStr(raw);
+  const s=String(raw).trim();
+  const m=s.match(/(\d{4})[\/\-年](\d{1,2})[\/\-月](\d{1,2})/);
+  if(m)return `${m[1]}-${String(m[2]).padStart(2,'0')}-${String(m[3]).padStart(2,'0')}`;
+  // fallback: new Date 但用本地時區
+  const d=new Date(s.replace(/\//g,'-'));
+  return localDateStr(d)||s;
+}
 let _tt;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2500);}
 function emptyHtml(msg){return`<div class="empty"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p>${msg}</p></div>`;}

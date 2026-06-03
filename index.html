@@ -422,14 +422,15 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
   <div class="msheet">
     <div class="mhandle"></div>
     <div class="mtitle" id="modal-title">新增支出</div>
+    <div class="fg"><label class="flbl">日期</label><input type="date" id="e-date"></div>
     <div class="fg"><label class="flbl">品項名稱</label>
       <input type="text" id="e-name" placeholder="例：晚餐、計程車" list="e-name-list" autocomplete="off">
       <datalist id="e-name-list"></datalist>
     </div>
     <div class="r2">
       <div class="fg"><label class="flbl">類別</label><select id="e-cat">
-          <option value="grocery">雜貨</option>
           <option value="food">外食</option>
+          <option value="grocery">雜貨</option>
           <option value="fun">娛樂</option>
           <option value="transport">交通</option>
           <option value="housing">房屋</option>
@@ -439,7 +440,6 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
         </select></div>
       <div class="fg"><label class="flbl">金額</label><input type="number" id="e-amount" placeholder="0" min="0" oninput="onAmtChange()"></div>
     </div>
-    <div class="fg"><label class="flbl">日期</label><input type="date" id="e-date"></div>
     <div class="fg"><label class="flbl">付款人</label><select id="e-payer"></select></div>
     <div class="fg" style="margin-bottom:0">
       <label class="flbl" style="margin-bottom:8px">分攤方式</label>
@@ -815,7 +815,7 @@ function openAddModal(id){
   }
   document.getElementById('e-name').value=(exp?.name)||'';
   document.getElementById('e-amount').value=(exp?.amount)||'';
-  document.getElementById('e-cat').value=(exp?.cat)||'grocery';
+  document.getElementById('e-cat').value=(exp?.cat)||'food';
   document.getElementById('e-notes').value=(exp?.notes)||'';
   const members=exp?[...new Set([...S.members,...(exp.splitAmong||[]),(exp.payer?[exp.payer]:[])])]:S.members;
   const _defPayer=exp?exp.payer:(myMember&&members.includes(myMember)?myMember:members[0]);

@@ -835,7 +835,7 @@ function renderSplitUI(exp){
   if(splitMode==='equal'){
     const checked=exp?.splitAmong||members;
     c.innerHTML=`<div class="srows">${members.map(m=>`
-      <label class="split-chip ${checked.includes(m)?'on':''}" onclick="this.classList.toggle('on');this.querySelector('input').checked=this.classList.contains('on');updEH()">
+      <label class="split-chip ${checked.includes(m)?'on':''}" onclick="event.preventDefault();this.classList.toggle('on');this.querySelector('input').checked=this.classList.contains('on');updEH()">
         <input type="checkbox" class="schk" value="${m}" ${checked.includes(m)?'checked':''} style="display:none">
         ${m}
       </label>`).join('')}</div>

@@ -81,10 +81,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Noto
 .searchbar input{background:none;border:none;outline:none;font-size:14px;flex:1;color:var(--text)}
 .searchbar svg{width:16px;height:16px;stroke:var(--muted);flex-shrink:0;stroke-width:2}
 .dglbl{font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 7px;padding:0 2px;letter-spacing:.3px}
+.warn-banner{background:#FFF8F0;border:1.5px solid #FCD34D;border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.warn-title{font-size:13px;font-weight:700;color:#92400E;display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.warn-list{display:flex;flex-direction:column;gap:5px}
+.warn-item{font-size:12px;color:#B45309;cursor:pointer;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,.7);display:flex;align-items:center;gap:6px}
+.warn-item:hover{background:rgba(255,255,255,1)}
+.ri-warn{position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;background:#F59E0B;display:flex;align-items:center;justify-content:center;font-size:10px;border:1.5px solid #fff}
 .ri{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);gap:11px;cursor:pointer}
 .ri:last-child{border-bottom:none}
 .ri:hover .ri-body .ri-name{color:var(--blue)}
-.ricon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.ricon{width:40px;height:40px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0;position:relative}
 .ri-body{flex:1;min-width:0}
 .ri-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .15s}
 .ri-sub{font-size:11px;color:var(--muted);margin-top:2px}
@@ -241,6 +247,7 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
     <button class="ib" id="search-toggle" onclick="toggleSearch()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
   </div>
   <div class="scroll">
+    <div id="warn-banner-wrap" style="display:none"></div>
     <div id="search-wrap" style="display:none">
       <div class="searchbar">
         <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor"/></svg>
@@ -409,7 +416,10 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
   <div class="msheet">
     <div class="mhandle"></div>
     <div class="mtitle" id="modal-title">新增支出</div>
-    <div class="fg"><label class="flbl">品項名稱</label><input type="text" id="e-name" placeholder="例：晚餐、計程車"></div>
+    <div class="fg"><label class="flbl">品項名稱</label>
+      <input type="text" id="e-name" placeholder="例：晚餐、計程車" list="e-name-list" autocomplete="off">
+      <datalist id="e-name-list"></datalist>
+    </div>
     <div class="r2">
       <div class="fg"><label class="flbl">類別</label><select id="e-cat">
           <option value="grocery">雜貨</option>
@@ -463,6 +473,8 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
 <script>
 // ── STATE ──────────────────────────────────────────────────────
 let S={members:[],expenses:[],currency:'NT$',groupName:'我的群組',avatars:{}};
+let _idSeq=0; // 遞增整數 ID 計數器
+function nextId(){return Date.now()*1000+((_idSeq++)%1000);}
 let splitMode='equal',editingId=null;
 let curMonth=new Date(),statMonth=new Date();
 let pendingSettle=null,pendingRows=[];
@@ -550,7 +562,7 @@ function renderHome(){
   if(!allNames.size){nb.innerHTML=emptyHtml('尚無資料');return;}
   nb.innerHTML=[...allNames].slice(0,5).map(m=>{
     const b=balances[m]||0,cls=b>0.01?'pos':b<-0.01?'neg':'zero',sign=b>0.01?'+':'';
-    return`<div class="nb-item">${mAvEl(m)}<div class="nb-body"><div class="nb-name">${m}</div><div class="nb-sub">付出 ${S.currency}${Math.round(paid[m]||0).toLocaleString()} · 應付 ${S.currency}${Math.round(owed[m]||0).toLocaleString()}</div></div><div class="nb-val ${cls}">${sign}${S.currency}${Math.round(Math.abs(b)).toLocaleString()}</div></div>`;
+    return`<div class="nb-item">${mAvEl(m)}<div class="nb-body"><div class="nb-name">${m}</div></div><div class="nb-val ${cls}">${sign}${S.currency}${Math.round(Math.abs(b)).toLocaleString()}</div></div>`;
   }).join('');
   const txns=simplify(balances);
   const dl=document.getElementById('h-debts');
@@ -569,6 +581,12 @@ function renderHome(){
 let searchOpen=false;
 function toggleSearch(){searchOpen=!searchOpen;document.getElementById('search-wrap').style.display=searchOpen?'block':'none';if(!searchOpen){document.getElementById('search-inp').value='';renderRecords();}}
 function clearSearch(){document.getElementById('search-inp').value='';renderRecords();}
+function hasDiscrepancy(exp){
+  if(!exp||exp.type==='settlement'||!exp.splitDetails?.length)return false;
+  const sum=exp.splitDetails.reduce((s,d)=>s+(d.amount||0),0);
+  return Math.abs(sum-exp.amount)>0.5;
+}
+
 function renderRecords(){
   document.getElementById('r-group-tag').textContent=S.groupName;
   const q=(document.getElementById('search-inp')?.value||'').toLowerCase().trim();
@@ -576,6 +594,28 @@ function renderRecords(){
   if(q)exps=exps.filter(e=>e.name.toLowerCase().includes(q)||(e.payer||'').toLowerCase().includes(q));
   exps.sort((a,b)=>b.date.localeCompare(a.date));
   const el=document.getElementById('rec-list');
+  // 差異警示 banner（無搜尋時才顯示）
+  const discExps=S.expenses.filter(hasDiscrepancy); // 永遠檢查全部，不受搜尋影響
+  const wbEl=document.getElementById('warn-banner-wrap');
+  if(wbEl){
+    if(discExps.length){
+      wbEl.style.display='block';
+      wbEl.innerHTML=`<div class="warn-banner">
+        <div class="warn-title">⚠️ ${discExps.length} 筆支出金額有差異，請確認</div>
+        <div class="warn-list">${discExps.map(e=>{
+          const diff=e.splitDetails.reduce((s,d)=>s+(d.amount||0),0)-e.amount;
+          return`<div class="warn-item" onclick="openAddModal(${e.id})">
+            <span>📌</span>
+            <span>${e.date} ${e.name}</span>
+            <span style="margin-left:auto;font-weight:700">差 ${diff>0?'+':''}${S.currency}${diff.toFixed(0)}</span>
+          </div>`;
+        }).join('')}</div>
+      </div>`;
+    } else {
+      wbEl.style.display='none';
+      wbEl.innerHTML='';
+    }
+  }
   if(!exps.length){el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>${q?'找不到符合的記錄':'尚無支出記錄<br>點擊下方 + 新增第一筆'}</p></div>`;return;}
   const groups={};
   exps.forEach(e=>{if(!groups[e.date])groups[e.date]=[];groups[e.date].push(e);});
@@ -583,7 +623,9 @@ function renderRecords(){
     const[y,m,d]=date.split('-');
     const rows=list.map(exp=>{
       const c=CAT[exp.cat]||CAT.other,isS=exp.type==='settlement';
-      return`<div class="ri${isS?' settle-rec':''}" onclick="openAddModal(${exp.id})">${catIcon(exp.cat||'other')}<div class="ri-body"><div class="ri-name">${exp.name}</div><div class="ri-sub">${c.label}${exp.notes?' · '+exp.notes:''}</div></div><div class="ri-right"><div class="ri-amt">${S.currency}${exp.amount.toLocaleString()}</div>${!isS?`<div class="ri-payer">${exp.payer} 付款</div>`:''}</div></div>`;
+      const _warn=hasDiscrepancy(exp)?'<div class="ri-warn">!</div>':'';
+      const _icon=catIcon(exp.cat||'other').replace('</div>',_warn+'</div>');
+      return`<div class="ri${isS?' settle-rec':''}" onclick="openAddModal('${exp.id}')">${_icon}<div class="ri-body"><div class="ri-name">${exp.name}</div><div class="ri-sub">${c.label}${exp.notes?' · '+exp.notes:''}</div></div><div class="ri-right"><div class="ri-amt">${S.currency}${exp.amount.toLocaleString()}</div>${!isS?`<div class="ri-payer">${exp.payer} 付款</div>`:''}</div></div>`;
     }).join('');
     return`<div class="dglbl">${y}年${parseInt(m)}月${parseInt(d)}日</div><div class="card" style="padding:4px 14px">${rows}</div>`;
   }).join('');
@@ -700,19 +742,25 @@ function confirmSettle(){
   if(!pendingSettle)return;
   const{from,to,amount}=pendingSettle;
   const date=document.getElementById('settle-date').value||new Date().toISOString().slice(0,10);
-  S.expenses.push({id:Date.now(),type:'settlement',name:`${from} 轉帳給 ${to}`,amount:Math.round(amount),date,payer:from,cat:'settlement',splitMode:'equal',splitAmong:[to],splitDetails:[{name:to,amount:Math.round(amount)}]});
+  S.expenses.push({id:nextId(),type:'settlement',name:`${from} 轉帳給 ${to}`,amount:Math.round(amount),date,payer:from,cat:'settlement',splitMode:'equal',splitAmong:[to],splitDetails:[{name:to,amount:Math.round(amount)}]});
   save();closeModal('modal-settle');pendingSettle=null;renderHome();renderRecords();toast('✓ 已記錄結清付款');
 }
 
 // ── ADD/EDIT MODAL ─────────────────────────────────────────────
 function openAddModal(id){
   editingId=id;
-  const exp=id?S.expenses.find(e=>e.id===id):null;
+  const exp=id!=null?S.expenses.find(e=>String(e.id)===String(id)):null;
   document.getElementById('modal-title').textContent=exp?'編輯支出':'新增支出';
   document.getElementById('exp-submit-btn').textContent=exp?'儲存修改':'確認新增';
   document.getElementById('exp-delete-wrap').style.display=exp?'block':'none';
   if(!S.members.length&&!exp){toast('請先到設定新增成員');showScreen('sc-settings');return;}
   document.getElementById('e-date').value=(exp?.date)||new Date().toISOString().slice(0,10);
+  // 填入歷史品項建議
+  const _dl=document.getElementById('e-name-list');
+  if(_dl){
+    const _names=[...new Set(S.expenses.filter(e=>e.type!=='settlement').map(e=>e.name).filter(Boolean))];
+    _dl.innerHTML=_names.map(n=>`<option value="${n}">`).join('');
+  }
   document.getElementById('e-name').value=(exp?.name)||'';
   document.getElementById('e-amount').value=(exp?.amount)||'';
   document.getElementById('e-cat').value=(exp?.cat)||'grocery';
@@ -734,11 +782,11 @@ function renderSplitUI(exp){
     c.innerHTML=`<div class="srows">${members.map(m=>`<div class="srow2"><label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer"><input type="checkbox" class="schk" value="${m}" ${checked.includes(m)?'checked':''} onchange="updEH()"><span class="sname">${m}</span></label></div>`).join('')}</div><div class="shit" id="shit">均分所有勾選成員</div>`;
   } else if(splitMode==='ratio'){
     const total=exp?.amount||0;
-    c.innerHTML=`<div class="srows">${members.map(m=>{let pct=100/members.length;if(exp&&exp.splitMode==='ratio'){const d=exp.splitDetails?.find(x=>x.name===m);if(d&&total)pct=d.amount/total*100;}return`<div class="srow2"><span class="sname">${m}</span><input type="number" class="rinp" data-m="${m}" value="${pct.toFixed(1)}" min="0" max="100" oninput="updRH()"><span class="sunit">%</span></div>`;}).join('')}</div><div class="shit" id="shit"></div>`;
+    c.innerHTML=`<div class="srows">${members.map(m=>{let pct=(exp&&exp.splitMode==='ratio')?0:(100/members.length);if(exp&&exp.splitMode==='ratio'){const d=exp.splitDetails?.find(x=>x.name===m);if(d&&total)pct=d.amount/total*100;}return`<div class="srow2"><span class="sname">${m}</span><input type="number" class="rinp" data-m="${m}" value="${pct.toFixed(1)}" min="0" max="100" oninput="updRH()"><span class="sunit">%</span></div>`;}).join('')}</div><div class="shit" id="shit"></div>`;
     updRH();
   } else {
     const total=parseFloat(document.getElementById('e-amount').value)||0;
-    c.innerHTML=`<div class="srows">${members.map(m=>{let amt=total/members.length;if(exp&&exp.splitMode==='amount'){const d=exp.splitDetails?.find(x=>x.name===m);if(d)amt=d.amount;}return`<div class="srow2"><span class="sname">${m}</span><input type="number" class="ainp" data-m="${m}" value="${amt.toFixed(0)}" min="0" oninput="updAH()"><span class="sunit">${S.currency}</span></div>`;}).join('')}</div><div class="shit" id="shit"></div>`;
+    c.innerHTML=`<div class="srows">${members.map(m=>{let amt=(exp&&exp.splitMode==='amount')?0:(total/members.length);if(exp&&exp.splitMode==='amount'){const d=exp.splitDetails?.find(x=>x.name===m);if(d)amt=d.amount;}return`<div class="srow2"><span class="sname">${m}</span><input type="number" class="ainp" data-m="${m}" value="${amt.toFixed(0)}" min="0" oninput="updAH()"><span class="sunit">${S.currency}</span></div>`;}).join('')}</div><div class="shit" id="shit"></div>`;
     updAH();
   }
 }
@@ -759,7 +807,7 @@ function submitExpense(){
   const split=getSplit(amount);
   if(!split){if(splitMode==='ratio')toast('比例加總須等於 100%');else if(splitMode==='amount')toast('金額加總須等於總金額');else toast('請選擇至少一位分攤對象');return;}
   const notes=document.getElementById('e-notes').value.trim();
-  const obj={id:editingId||Date.now(),name,amount,date,payer,cat,notes,splitMode:split.mode,splitAmong:split.data.map(d=>d.name),splitDetails:split.data};
+  const obj={id:editingId||nextId(),name,amount,date,payer,cat,notes,splitMode:split.mode,splitAmong:split.data.map(d=>d.name),splitDetails:split.data};
   if(editingId)S.expenses=S.expenses.map(e=>e.id===editingId?obj:e);else S.expenses.push(obj);
   save();closeModal('modal-exp');
   const[y,m]=date.split('-').map(Number);curMonth=new Date(y,m-1,1);
@@ -942,7 +990,7 @@ function confirmImport(){
     // if splitAmong empty (old fmt, no split col), use all members
     const sa=r.splitAmong.length?r.splitAmong:[...S.members];
     const sd=r.splitDetails.length?r.splitDetails:sa.map(n=>({name:n,amount:r.amount/sa.length}));
-    S.expenses.push({id:Date.now()+Math.random(),name:r.name,amount:r.amount,date:r.date,payer:r.payer,cat:r.cat||'other',splitMode:r.splitDetails.length?'amount':'equal',splitAmong:sa,splitDetails:sd,paidDetails:(r.paidDetails&&r.paidDetails.length?r.paidDetails:null)});
+    S.expenses.push({id:nextId(),name:r.name,amount:r.amount,date:r.date,payer:r.payer,cat:r.cat||'other',splitMode:r.splitDetails.length?'amount':'equal',splitAmong:sa,splitDetails:sd,paidDetails:(r.paidDetails&&r.paidDetails.length?r.paidDetails:null)});
   });
   save();cancelImport();renderHome();renderRecords();
   const skipped=pendingRows.length-valid.length;

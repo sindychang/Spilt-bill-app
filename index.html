@@ -145,17 +145,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Noto
 .badge{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:700}
 .bok{background:var(--green-soft);color:var(--green)}.berr{background:var(--red-soft);color:var(--red)}.bdup{background:#F1F5F9;color:#94A3B8}
 /* form */
-.fg{margin-bottom:13px}
+.fg{margin-bottom:13px;min-width:0;overflow:hidden}
 .flbl{display:block;font-size:11px;font-weight:700;color:var(--muted);margin-bottom:5px;letter-spacing:.3px}
-input[type=text],input[type=number],input[type=date],select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:11px;font-size:14px;background:var(--bg);outline:none;color:var(--text);transition:border-color .15s,background .15s}
+input[type=text],input[type=number],input[type=date],select{width:100%;min-width:0;max-width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:11px;font-size:14px;background:var(--bg);outline:none;color:var(--text);transition:border-color .15s,background .15s;box-sizing:border-box}
 input:focus,select:focus{border-color:var(--blue);background:#fff}
 .r2{display:flex;gap:10px}.r2>*{flex:1;min-width:0}
 .stabs{display:flex;gap:6px;margin-bottom:11px}
 .stab{flex:1;padding:7px 4px;border:1.5px solid var(--border);border-radius:9px;background:var(--bg);font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);text-align:center;transition:all .15s}
 .stab.active{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
-.srows{display:flex;flex-direction:column;gap:9px}
+.srows{display:flex;flex-wrap:wrap;gap:8px}
 .srow2{display:flex;align-items:center;gap:8px}
 .srow2 input{flex:1;padding:8px 10px;text-align:right}
+.split-chip{display:inline-flex;align-items:center;padding:9px 18px;border-radius:22px;border:1.5px solid var(--border);cursor:pointer;font-size:14px;font-weight:600;color:var(--muted);background:var(--bg);transition:all .15s;user-select:none;-webkit-user-select:none}
+.split-chip.on{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
 .sunit{font-size:13px;color:var(--muted);flex:0 0 22px;text-align:right}
 .schk{width:18px;height:18px;cursor:pointer;accent-color:var(--blue)}
 .shit{font-size:12px;color:var(--muted);margin-top:8px;margin-bottom:4px}
@@ -170,7 +172,7 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
 .bgreen{background:var(--green);color:#fff}
 .moverlay{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:flex-end;justify-content:center;z-index:200}
 .moverlay.open{display:flex}
-.msheet{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:480px;max-height:93vh;overflow-y:auto;padding:16px 18px 32px;animation:sup .24s ease-out}
+.msheet{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:480px;max-height:93vh;overflow-y:auto;overflow-x:hidden;padding:16px 18px 32px;animation:sup .24s ease-out}
 @keyframes sup{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .mhandle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px}
 .mtitle{font-size:17px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
@@ -832,14 +834,19 @@ function renderSplitUI(exp){
   const c=document.getElementById('split-ui');if(!members.length){c.innerHTML='';return;}
   if(splitMode==='equal'){
     const checked=exp?.splitAmong||members;
-    c.innerHTML=`<div class="srows">${members.map(m=>`<div class="srow2"><label style="display:flex;align-items:center;gap:8px;flex:1;cursor:pointer"><input type="checkbox" class="schk" value="${m}" ${checked.includes(m)?'checked':''} onchange="updEH()"><span class="sname">${m}</span></label></div>`).join('')}</div><div class="shit" id="shit">均分所有勾選成員</div>`;
+    c.innerHTML=`<div class="srows">${members.map(m=>`
+      <label class="split-chip ${checked.includes(m)?'on':''}" onclick="this.classList.toggle('on');this.querySelector('input').checked=this.classList.contains('on');updEH()">
+        <input type="checkbox" class="schk" value="${m}" ${checked.includes(m)?'checked':''} style="display:none">
+        ${m}
+      </label>`).join('')}</div>
+    <div class="shit" id="shit">${checked.length?`均分 ${checked.length} 位成員`:'均分所有勾選成員'}</div>`;
   } else if(splitMode==='ratio'){
     const total=exp?.amount||0;
-    c.innerHTML=`<div class="srows">${members.map(m=>{let pct=(exp&&exp.splitMode==='ratio')?0:(100/members.length);if(exp&&exp.splitMode==='ratio'){const d=exp.splitDetails?.find(x=>x.name===m);if(d&&total)pct=d.amount/total*100;}return`<div class="srow2"><span class="sname">${m}</span><input type="number" class="rinp" data-m="${m}" value="${pct.toFixed(1)}" min="0" max="100" oninput="updRH()"><span class="sunit">%</span></div>`;}).join('')}</div><div class="shit" id="shit"></div>`;
+    c.innerHTML=`<div class="srows" style="flex-direction:column;flex-wrap:nowrap">${members.map(m=>{let pct=(exp&&exp.splitMode==='ratio')?0:(100/members.length);if(exp&&exp.splitMode==='ratio'){const d=exp.splitDetails?.find(x=>x.name===m);if(d&&total)pct=d.amount/total*100;}return`<div class="srow2"><span class="sname">${m}</span><input type="number" class="rinp" data-m="${m}" value="${pct.toFixed(1)}" min="0" max="100" oninput="updRH()"><span class="sunit">%</span></div>`;}).join('')}</div><div class="shit" id="shit"></div>`;
     updRH();
   } else {
     const total=parseFloat(document.getElementById('e-amount').value)||0;
-    c.innerHTML=`<div class="srows">${members.map(m=>{let amt=(exp&&exp.splitMode==='amount')?0:(total/members.length);if(exp&&exp.splitMode==='amount'){const d=exp.splitDetails?.find(x=>x.name===m);if(d)amt=d.amount;}return`<div class="srow2"><span class="sname">${m}</span><input type="number" class="ainp" data-m="${m}" value="${amt.toFixed(0)}" min="0" oninput="updAH()"><span class="sunit">${S.currency}</span></div>`;}).join('')}</div><div class="shit" id="shit"></div>`;
+    c.innerHTML=`<div class="srows" style="flex-direction:column;flex-wrap:nowrap">${members.map(m=>{let amt=(exp&&exp.splitMode==='amount')?0:(total/members.length);if(exp&&exp.splitMode==='amount'){const d=exp.splitDetails?.find(x=>x.name===m);if(d)amt=d.amount;}return`<div class="srow2"><span class="sname">${m}</span><input type="number" class="ainp" data-m="${m}" value="${amt.toFixed(0)}" min="0" oninput="updAH()"><span class="sunit">${S.currency}</span></div>`;}).join('')}</div><div class="shit" id="shit"></div>`;
     updAH();
   }
 }

@@ -29,6 +29,7 @@ html,body{height:100%}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Noto Sans TC',sans-serif;background:var(--bg);color:var(--text);max-width:480px;margin:0 auto;min-height:100vh}
 .screen{display:none;flex-direction:column;height:100vh;overflow:hidden}
 #sc-home,#sc-records,#sc-stats,#sc-settings{height:calc(100vh - var(--nav-h))}
+#sc-p-app{height:calc(100vh - var(--nav-h))}
 .screen.active{display:flex}
 .scroll{flex:1;overflow-y:auto;padding:12px 16px 16px}
 .nav-spacer{height:20px;flex-shrink:0;pointer-events:none}
@@ -62,7 +63,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Noto
 .mnav{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:8px}
 .marr{width:30px;height:30px;border-radius:50%;border:1.5px solid var(--border);background:var(--card);cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--muted)}
 .marr svg{width:14px;height:14px;stroke-width:2.5}
-.mlbl{font-size:15px;font-weight:700;min-width:120px;text-align:center}
+.mlbl{font-size:15px;font-weight:700;min-width:120px;text-align:center;cursor:pointer;user-select:none}
+/* 快速選月：水平滑動月份色塊 */
+.c-scroll{display:flex;gap:8px;overflow-x:auto;padding:8px 2px 2px;margin-bottom:8px;scrollbar-width:none;-ms-overflow-style:none;scroll-snap-type:x proximity;cursor:grab;user-select:none}
+.c-scroll::-webkit-scrollbar{display:none}
+.c-chip{flex-shrink:0;padding:7px 12px;border-radius:20px;background:var(--card);border:1.5px solid var(--border);font-size:11px;font-weight:700;color:var(--muted);white-space:nowrap;text-align:center;cursor:pointer;scroll-snap-align:center;line-height:1.3}
+.c-chip .yy{display:block;font-size:9px;font-weight:500;opacity:.7}
+.c-chip.cur{background:var(--blue);color:#fff;border-color:var(--blue)}
 .nb-item{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:10px}
 .nb-item:last-child{border-bottom:none}
 .avatar{width:38px;height:38px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:1.5px solid var(--border)}
@@ -83,6 +90,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Noto
 .searchbar{display:flex;align-items:center;gap:8px;background:var(--card);border:1.5px solid var(--border);border-radius:11px;padding:9px 12px;margin-bottom:8px}
 .searchbar input{background:none;border:none;outline:none;font-size:14px;flex:1;color:var(--text)}
 .searchbar svg{width:16px;height:16px;stroke:var(--muted);flex-shrink:0;stroke-width:2}
+.searchbar.compact{padding:6px 10px;border-radius:9px}
+.searchbar.compact input{font-size:13px}
+.searchbar.compact svg{width:14px;height:14px}
+.searchbar-filter-btn{background:none;border:none;cursor:pointer;color:var(--muted);flex-shrink:0;display:flex;padding:0}
+.searchbar-filter-btn svg{width:14px;height:14px;stroke:var(--muted);stroke-width:2}
+/* 從個人記帳點分帳項目跳過來時，短暫高亮該行 */
+.ri-highlight{animation:riFlash 1.6s ease;border-radius:8px}
+@keyframes riFlash{0%{background:var(--blue-soft)}100%{background:transparent}}
 .dglbl{font-size:12px;font-weight:700;color:var(--muted);margin:14px 0 7px;padding:0 2px;letter-spacing:.3px}
 .warn-banner{background:#FFF8F0;border:1.5px solid #FCD34D;border-radius:12px;padding:12px 14px;margin-bottom:12px}
 .warn-title{font-size:13px;font-weight:700;color:#92400E;display:flex;align-items:center;gap:6px;margin-bottom:8px}
@@ -102,6 +117,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang TC','Noto
 .ri-payer{font-size:11px;color:var(--muted);margin-top:2px}
 .ri.settle-rec .ri-name{color:var(--settle)}
 .payer-badge{display:inline-block;margin-top:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.src-tag{display:inline-block;padding:1px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.src-tag.split{background:var(--blue-soft);color:var(--blue)}
+.src-tag.personal{background:var(--green-soft);color:var(--green)}
 .bar-chart{display:flex;align-items:flex-end;gap:6px;height:72px}
 .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:0;position:relative}
 .bar-fill{width:100%;background:var(--blue-soft);border-radius:6px 6px 0 0;min-height:4px;position:relative}
@@ -167,6 +185,22 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
 .stabs{display:flex;gap:6px;margin-bottom:11px}
 .stab{flex:1;padding:7px 4px;border:1.5px solid var(--border);border-radius:9px;background:var(--bg);font-size:12px;font-weight:600;cursor:pointer;color:var(--muted);text-align:center;transition:all .15s}
 .stab.active{border-color:var(--blue);background:var(--blue-soft);color:var(--blue)}
+.mode-toggle{font-size:11px;font-weight:700;padding:7px 12px;border-radius:20px;border:1.5px solid var(--blue);color:var(--blue);background:var(--blue-soft);cursor:pointer;white-space:nowrap;flex-shrink:0}
+/* 紀錄篩選（月份/類別）：用低調的灰階，避免跟主題色搶視覺、也比一般卡片窄一點 */
+.filter-panel{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-bottom:8px}
+.filter-row{display:flex;gap:6px}
+.filter-row+.filter-row{margin-top:6px}
+.filter-fg{flex:1;min-width:0}
+.filter-fg label{display:block;font-size:10px;font-weight:700;color:var(--muted);margin-bottom:3px}
+.filter-select{width:100%;padding:6px 8px;font-size:12px;border:1.5px solid var(--border);border-radius:7px;background:var(--card);color:var(--text)}
+.filter-btn{padding:6px 8px;font-size:12px;font-weight:700;border-radius:7px;border:1px solid var(--border);background:var(--card);color:var(--muted);cursor:pointer}
+.filter-btn.on{background:var(--muted);color:#fff;border-color:var(--muted)}
+.filter-chip{display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:6px 10px;margin-bottom:8px;font-size:12px;font-weight:600;color:var(--muted)}
+.filter-chip span{cursor:pointer}
+.filter-chip button{background:none;border:none;color:var(--muted);font-weight:700;cursor:pointer;font-size:12px}
+/* 個人記帳子模式：柔和黃色系（低飽和、不過亮），覆蓋掉分帳app原本的紅色系變數 */
+body.mode-personal{--blue:#A6842A;--blue-soft:#FBF3DC;}
+body.mode-personal .sbanner{background:linear-gradient(145deg,#8A6D1C 0%,#A6842A 100%)}
 .srows{display:flex;flex-wrap:wrap;gap:8px}
 .srow2{display:flex;align-items:center;gap:8px}
 .srow2 input{flex:1;padding:8px 10px;text-align:right}
@@ -222,13 +256,15 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
       <div class="tb-title">總覽</div>
     </div>
     <button class="ib" onclick="showScreen('sc-import')" title="匯入"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+    <button class="mode-toggle" onclick="switchAppMode('personal')">個人記帳</button>
   </div>
   <div class="scroll">
     <div class="mnav">
       <button class="marr" onclick="changeMonth(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <span class="mlbl" id="h-month-lbl"></span>
+      <span class="mlbl" id="h-month-lbl" onclick="toggleMonthChips('home')"></span>
       <button class="marr" onclick="changeMonth(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg></button>
     </div>
+    <div id="h-month-chips"></div>
     <div class="sbanner">
       <div class="sb-tag">本月支出</div>
       <div class="sb-total" id="h-total">NT$0</div>
@@ -263,16 +299,15 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
       <div class="tb-title">紀錄</div>
     </div>
     <button class="ib" onclick="openChangelog()" title="修改紀錄"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></button>
-    <button class="ib" id="search-toggle" onclick="toggleSearch()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
-  </div>
-  <div id="search-wrap" style="display:none;padding:8px 16px;background:var(--card);border-bottom:1px solid var(--border);flex-shrink:0">
-    <div class="searchbar" style="margin-bottom:0">
-      <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor"/></svg>
-      <input type="text" id="search-inp" placeholder="搜尋品項、付款人…" oninput="renderRecords()">
-      <button onclick="clearSearch()" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:14px;padding:0">✕</button>
-    </div>
+    <button class="mode-toggle" onclick="switchAppMode('personal')">個人記帳</button>
   </div>
   <div class="scroll">
+    <div id="rec-filter-area" style="display:none"></div>
+    <div class="searchbar compact">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor"/></svg>
+      <input type="text" id="search-inp" placeholder="搜尋品項、付款人…" oninput="renderRecords()">
+      <button class="searchbar-filter-btn" onclick="toggleRecFilterPanel()" title="篩選"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
+    </div>
     <div id="warn-banner-wrap" style="display:none"></div>
     <div id="rec-list"></div>
     <div class="nav-spacer"></div>
@@ -281,16 +316,33 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
 
 <!-- STATS -->
 <div id="sc-stats" class="screen">
-  <div class="topbar"><div class="tb-title">統計</div></div>
+  <div class="topbar"><div class="tb-title">統計</div><button class="mode-toggle" style="margin-left:auto" onclick="switchAppMode('personal')">個人記帳</button></div>
   <div class="scroll">
     <div class="mnav">
       <button class="marr" onclick="changeStatMonth(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg></button>
-      <span class="mlbl" id="s-month-lbl"></span>
+      <span class="mlbl" id="s-month-lbl" onclick="toggleMonthChips('stats')"></span>
       <button class="marr" onclick="changeStatMonth(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg></button>
     </div>
+    <div id="s-month-chips"></div>
     <div class="card"><div class="ct" style="margin-bottom:4px">近 6 個月趨勢</div><div id="trend-chart" style="padding-top:22px"></div></div>
     <div class="card"><div class="ct">類別分布</div><div id="cat-chart"></div></div>
     <div class="card"><div class="ct">成員支出</div><div id="mbr-chart"></div></div>
+    <div class="nav-spacer"></div>
+  </div>
+</div>
+
+<!-- PERSONAL APP (獨立子模式：有自己的 總覽/紀錄/統計 底部導覽，跟主要的分帳底部導覽分開) -->
+<div id="sc-p-app" class="screen">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-tag">個人記帳</div>
+      <div class="tb-title" id="p-title">總覽</div>
+    </div>
+    <button class="ib" onclick="openChangelog()" title="修改紀錄"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg></button>
+    <button class="mode-toggle" onclick="switchAppMode('split')">分帳</button>
+  </div>
+  <div class="scroll">
+    <div id="p-content"></div>
     <div class="nav-spacer"></div>
   </div>
 </div>
@@ -300,6 +352,7 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
   <div class="topbar">
     <button class="ib" onclick="histBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg></button>
     <div class="tb-title">設定</div>
+    <button class="mode-toggle" style="margin-left:auto" onclick="switchAppMode('personal')">個人記帳</button>
   </div>
   <div class="scroll">
     <div class="card">
@@ -435,7 +488,7 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
   <button class="ni active" data-sc="sc-home" onclick="navTo('sc-home',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>總覽
   </button>
-  <button class="ni" data-sc="sc-records" onclick="navTo('sc-records',this)">
+  <button class="ni" data-sc="sc-records" onclick="recFilter={year:'',month:'',cat:''};recFilterOpen=false;navTo('sc-records',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>紀錄
   </button>
   <div class="nifab"><button class="fabtn" onclick="openAddModal(null)">+</button></div>
@@ -444,6 +497,20 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
   </button>
   <button class="ni" data-sc="sc-settings" onclick="navTo('sc-settings',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>設定
+  </button>
+</nav>
+
+<!-- 個人記帳子模式：自己的底部導覽（總覽/紀錄/統計） -->
+<nav class="bnav" id="bnav-p" style="display:none">
+  <button class="ni active" data-pt="home" onclick="pGoTab('home')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>總覽
+  </button>
+  <button class="ni" data-pt="records" onclick="pGoTab('records')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>紀錄
+  </button>
+  <div class="nifab"><button class="fabtn" onclick="openPersonalModal(null)">+</button></div>
+  <button class="ni" data-pt="stats" onclick="pGoTab('stats')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>統計
   </button>
 </nav>
 
@@ -484,6 +551,34 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
     <button class="btn bprimary bblock" id="exp-submit-btn" onclick="submitExpense()">確認新增</button>
     <div id="exp-delete-wrap" style="display:none;margin-top:10px">
       <button class="btn bdanger bblock" onclick="deleteExpense()">刪除此筆支出</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: PERSONAL EXPENSE -->
+<div class="moverlay" id="modal-personal-exp" onclick="if(event.target===this)closeModal('modal-personal-exp')">
+  <div class="msheet">
+    <div class="mhandle"></div>
+    <div class="mtitle" id="pe-modal-title">新增個人消費</div>
+    <div class="fg"><label class="flbl">日期</label><input type="date" id="pe-date"></div>
+    <div class="fg"><label class="flbl">品項名稱</label><input type="text" id="pe-name" placeholder="例：咖啡、書籍" autocomplete="off"></div>
+    <div class="r2">
+      <div class="fg"><label class="flbl">類別</label><select id="pe-cat">
+          <option value="food">外食</option>
+          <option value="grocery">雜貨</option>
+          <option value="fun">娛樂</option>
+          <option value="transport">交通</option>
+          <option value="housing">房屋</option>
+          <option value="shop">購物</option>
+          <option value="bill">帳單</option>
+          <option value="other">其他</option>
+        </select></div>
+      <div class="fg"><label class="flbl">金額</label><input type="number" id="pe-amount" placeholder="0" min="0"></div>
+    </div>
+    <div class="fg" style="margin-top:0"><label class="flbl">備註（選填）</label><input type="text" id="pe-notes" placeholder="輸入備註…"></div>
+    <button class="btn bprimary bblock" id="pe-submit-btn" onclick="submitPersonalExpense()">確認新增</button>
+    <div id="pe-delete-wrap" style="display:none;margin-top:10px">
+      <button class="btn bdanger bblock" onclick="deletePersonalExpense()">刪除此筆消費</button>
     </div>
   </div>
 </div>
@@ -533,6 +628,23 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
   </div>
 </div>
 
+<!-- ── 進入app時：選擇要記帳還是分帳 ── -->
+<div id="mode-select-screen" style="display:none;position:fixed;inset:0;z-index:9998;background:linear-gradient(145deg,#7A2E24,#B84C3C);align-items:center;justify-content:center;padding:32px">
+  <div style="width:100%;max-width:380px;text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">👋</div>
+    <h2 style="font-size:22px;font-weight:800;color:#fff;margin-bottom:8px">這次要做什麼？</h2>
+    <p style="font-size:14px;color:rgba(255,255,255,.8);margin-bottom:28px">選擇後，畫面右上角的按鈕可以隨時切換</p>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <button onclick="chooseAppMode('split')" style="display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:14px;border:none;background:rgba(255,255,255,.15);cursor:pointer;width:100%;font-size:16px;font-weight:700;color:#fff;backdrop-filter:blur(4px)">
+        <span style="font-size:28px">🧾</span><span>分帳</span>
+      </button>
+      <button onclick="chooseAppMode('personal')" style="display:flex;align-items:center;gap:14px;padding:16px 20px;border-radius:14px;border:none;background:rgba(255,255,255,.15);cursor:pointer;width:100%;font-size:16px;font-weight:700;color:#fff;backdrop-filter:blur(4px)">
+        <span style="font-size:28px">📒</span><span>個人記帳</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ── 成員身分選擇畫面 ── -->
 <div id="member-select-screen" style="display:none;position:fixed;inset:0;z-index:9997;background:linear-gradient(145deg,#7A2E24,#B84C3C);align-items:center;justify-content:center;padding:32px">
   <div style="width:100%;max-width:380px;text-align:center">
@@ -546,12 +658,14 @@ input:focus,select:focus{border-color:var(--blue);background:#fff}
 
 <script>
 // ── STATE ──────────────────────────────────────────────────────
-let S={members:[],expenses:[],currency:'NT$',groupName:'我的群組',avatars:{},changelog:[]};
+let S={members:[],expenses:[],personalExpenses:[],currency:'NT$',groupName:'我的群組',avatars:{},changelog:[]};
 let _idSeq=0; // 遞增整數 ID 計數器
 function nextId(){return String(Date.now()*1000+((_idSeq++)%1000));}
 let splitMode='equal',editingId=null;
-let curMonth=new Date(),statMonth=new Date();
+let curMonth=new Date(),statMonth=new Date(),perMonth=new Date();
+let chipsOpen={home:false,stats:false,phome:false,pstats:false}; // 快速選月色塊列 預設收合，點月份文字才展開
 let pendingSettle=null,pendingRows=[];
+let editingPersonalId=null;
 
 function load(){
   // migrate v2 → v3
@@ -585,8 +699,9 @@ function save(){
 }
 
 // ── NAV ────────────────────────────────────────────────────────
-const HIDE_NAV=['sc-import']; // 設定頁保留底部 nav
+const HIDE_NAV=['sc-import','sc-p-app']; // 設定頁保留底部 nav；個人記帳是獨立子模式，隱藏主底部 nav
 let prevScreen='sc-home';
+let appMode='split'; // 'split'=分帳（主app） | 'personal'=個人記帳（獨立子模式）
 function navTo(id,btn){showScreen(id);if(btn){document.querySelectorAll('.ni[data-sc]').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}}
 function showScreen(id){
   const cur=document.querySelector('.screen.active')?.id;
@@ -598,16 +713,107 @@ function showScreen(id){
   if(id==='sc-home')renderHome();
   if(id==='sc-records')renderRecords();
   if(id==='sc-stats')renderStats();
+  if(id==='sc-p-app')renderPersonalApp();
   if(id==='sc-settings'){renderMembers();document.getElementById('cur-sel').value=S.currency;document.getElementById('grp-inp').value=S.groupName;document.getElementById('room-inp').value=roomCode;renderMyMemberSel();}
   if(id==='sc-import')renderImportTpl();
 }
+// ── 個人記帳 子模式切換 ─────────────────────────────────────────
+function switchAppMode(mode,targetScreen){
+  appMode=mode;
+  document.body.classList.toggle('mode-personal',mode==='personal');
+  if(mode==='personal'){
+    PTAB='home';
+    showScreen('sc-p-app');
+    document.getElementById('bnav-p').style.display='flex';
+  } else {
+    document.getElementById('bnav-p').style.display='none';
+    const t=targetScreen||'sc-home';
+    showScreen(t);
+    document.querySelectorAll('.ni[data-sc]').forEach(b=>b.classList.remove('active'));
+    document.querySelector('.ni[data-sc="'+t+'"]')?.classList.add('active');
+  }
+}
 function histBack(){showScreen(prevScreen);}
+// 從個人記帳的紀錄清單，點一筆來自分帳的項目 → 直接切回分帳並打開該筆的編輯視窗
+function goToSplitExpense(id){
+  recFilter={year:'',month:'',cat:''};recFilterOpen=false; // 確保該筆不會被目前的篩選/搜尋擋住
+  const si=document.getElementById('search-inp');if(si)si.value='';
+  switchAppMode('split','sc-records');
+  setTimeout(()=>{
+    const row=document.querySelector('#rec-list [data-eid="'+id+'"]');
+    if(row){
+      row.scrollIntoView({behavior:'smooth',block:'center'});
+      row.classList.add('ri-highlight');
+      setTimeout(()=>row.classList.remove('ri-highlight'),1600);
+    }
+  },80);
+}
 
 // ── MONTH ──────────────────────────────────────────────────────
 function changeMonth(d){curMonth=new Date(curMonth.getFullYear(),curMonth.getMonth()+d,1);renderHome();}
 function changeStatMonth(d){statMonth=new Date(statMonth.getFullYear(),statMonth.getMonth()+d,1);renderStats();}
 function fmtM(dt){return `${dt.getFullYear()} 年 ${dt.getMonth()+1} 月`;}
 function inM(exp,dt){return exp.date.startsWith(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}`);}
+
+// ── 快速選月：水平滑動月份色塊（首頁/統計/個人記帳 共用） ──────────
+// 點月份文字才展開/收合這排；展開後可用滑鼠拖曳（桌面）或手指滑動（手機）左右瀏覽
+function toggleMonthChips(key){
+  chipsOpen[key]=!chipsOpen[key];
+  if(key==='home')renderHome();
+  else if(key==='stats')renderStats();
+  else renderPersonalApp();
+}
+function monthChipsHtml(sel,id){
+  const today=new Date();
+  const start=new Date(today.getFullYear(),today.getMonth()-12,1);
+  let html='';
+  for(let i=0;i<25;i++){
+    const d=new Date(start.getFullYear(),start.getMonth()+i,1);
+    const isCur=d.getFullYear()===sel.getFullYear()&&d.getMonth()===sel.getMonth();
+    html+=`<div class="c-chip${isCur?' cur':''}" onclick="onMonthChipClick('${id}',${d.getFullYear()},${d.getMonth()})">${d.getMonth()+1}月<span class="yy">${d.getFullYear()}</span></div>`;
+  }
+  return `<div class="c-scroll" id="${id}">${html}</div>`;
+}
+function scrollChipIntoView(id){
+  const wrap=document.getElementById(id);
+  const cur=wrap?wrap.querySelector('.c-chip.cur'):null;
+  if(cur)cur.scrollIntoView({behavior:'auto',inline:'center',block:'nearest'});
+}
+// 讓 .c-scroll 支援滑鼠拖曳左右瀏覽（原生 overflow-x:auto 只支援觸控/滾輪，滑鼠拖曳需自行實作）
+// 用事件委派掛在 document 上一次即可，不受每次重新渲染月份色塊列而重複綁定
+let _chipDrag=null;
+document.addEventListener('mousedown',e=>{
+  const el=e.target.closest('.c-scroll');
+  if(!el)return;
+  _chipDrag={el,startX:e.pageX,startScroll:el.scrollLeft,moved:false};
+  el.style.cursor='grabbing';
+});
+document.addEventListener('mousemove',e=>{
+  if(!_chipDrag)return;
+  const dx=e.pageX-_chipDrag.startX;
+  if(Math.abs(dx)>4)_chipDrag.moved=true;
+  _chipDrag.el.scrollLeft=_chipDrag.startScroll-dx;
+});
+document.addEventListener('mouseup',()=>{
+  if(!_chipDrag)return;
+  _chipDrag.el.style.cursor='grab';
+  if(_chipDrag.moved){
+    const el=_chipDrag.el;
+    el._suppressClick=true;
+    setTimeout(()=>{el._suppressClick=false;},0);
+  }
+  _chipDrag=null;
+});
+document.addEventListener('click',e=>{
+  const el=e.target.closest('.c-scroll');
+  if(el&&el._suppressClick){e.stopPropagation();e.preventDefault();}
+},true);
+function onMonthChipClick(id,y,m){
+  if(id==='home-chips'){curMonth=new Date(y,m,1);renderHome();}
+  else if(id==='stats-chips'){statMonth=new Date(y,m,1);renderStats();}
+  else if(id==='p-home-chips'){perMonth=new Date(y,m,1);renderPersonalApp();}
+  else if(id==='p-stats-chips'){perStatMonth=new Date(y,m,1);renderPersonalApp();}
+}
 
 // ── CATEGORY ───────────────────────────────────────────────────
 const CAT={
@@ -625,6 +831,7 @@ const CAT={
   settlement:{label:'轉帳',icon:'💸',color:'#7C3AED',bg:'#F5F3FF'},
 };
 function catIcon(key){const c=CAT[key]||CAT.other;return `<div class="ricon" style="background:${c.bg}">${c.icon||c.label.slice(0,1)}</div>`;}
+const FILTER_CATS=['food','grocery','fun','transport','housing','shop','bill','other']; // 篩選選單用，排除重複別名跟轉帳
 const CAT_MAP={'雜貨':'grocery','外食':'food','餐飲':'food','食物':'food','娛樂':'fun','票券':'fun','交通':'transport','計程車':'transport','房屋':'housing','住宿':'housing','購物':'shop','帳單':'bill','水電':'bill','酒水':'food','飲料':'food','其他':'other'};
 function mapCat(s){return CAT_MAP[s?.trim()]||'other';}
 
@@ -638,6 +845,8 @@ function mAvEl(name,sz=38){return `<div class="avatar" style="width:${sz}px;heig
 function renderHome(){
   document.getElementById('h-group-tag').textContent=S.groupName;
   document.getElementById('h-month-lbl').textContent=fmtM(curMonth);
+  document.getElementById('h-month-chips').innerHTML=chipsOpen.home?monthChipsHtml(curMonth,'home-chips'):'';
+  if(chipsOpen.home)scrollChipIntoView('home-chips');
   const exps=S.expenses.filter(e=>inM(e,curMonth)&&e.type!=='settlement');
   const total=exps.reduce((s,e)=>s+e.amount,0);
   const maxE=exps.reduce((m,e)=>Math.max(m,e.amount),0);
@@ -666,20 +875,88 @@ function renderHome(){
 }
 
 // ── RECORDS ────────────────────────────────────────────────────
-let searchOpen=false;
-function toggleSearch(){searchOpen=!searchOpen;document.getElementById('search-wrap').style.display=searchOpen?'block':'none';if(!searchOpen){document.getElementById('search-inp').value='';renderRecords();}}
-function clearSearch(){document.getElementById('search-inp').value='';renderRecords();}
 function hasDiscrepancy(exp){
   if(!exp||exp.type==='settlement'||!exp.splitDetails?.length)return false;
   const sum=exp.splitDetails.reduce((s,d)=>s+(d.amount||0),0);
   return Math.abs(sum-exp.amount)>0.5;
 }
 
+let recFilter={year:'',month:'',cat:''}; // 年/月/類別篩選，皆為空字串代表不篩選
+let recFilterOpen=false; // 篩選面板是否展開
+const MONTH_OPTS=Array.from({length:12},(_,i)=>String(i+1).padStart(2,'0'));
+function filterLabel(f){
+  const parts=[];
+  if(f.year&&f.month)parts.push(`${f.year}年${parseInt(f.month)}月`);
+  else if(f.year)parts.push(`${f.year}年`);
+  else if(f.month)parts.push(`${parseInt(f.month)}月`);
+  if(f.cat)parts.push((CAT[f.cat]||CAT.other).label);
+  return parts.join(' · ');
+}
+function goCategoryRecords(catKey,ctx){
+  if(ctx==='split'){
+    recFilter={year:String(statMonth.getFullYear()),month:String(statMonth.getMonth()+1).padStart(2,'0'),cat:catKey};recFilterOpen=false;
+    navTo('sc-records',document.querySelector('.ni[data-sc="sc-records"]'));
+  } else {
+    prFilter={year:String(perStatMonth.getFullYear()),month:String(perStatMonth.getMonth()+1).padStart(2,'0'),cat:catKey};prFilterOpen=false;
+    PTAB='records';
+    renderPersonalApp();
+  }
+}
+function toggleRecFilterPanel(){recFilterOpen=!recFilterOpen;renderRecords();}
+function renderRecFilterUI(){
+  const el=document.getElementById('rec-filter-area');
+  if(!el)return;
+  const active=!!(recFilter.year||recFilter.month||recFilter.cat);
+  if(recFilterOpen){
+    const years=[...new Set(S.expenses.map(e=>e.date.slice(0,4)))].sort().reverse();
+    el.style.display='block';
+    el.innerHTML=`<div class="filter-panel">
+      <div class="filter-row">
+        <div class="filter-fg"><label>年</label>
+          <select class="filter-select" onchange="recFilter.year=this.value;renderRecords()">
+            <option value="">全部年份</option>
+            ${years.map(y=>`<option value="${y}" ${recFilter.year===y?'selected':''}>${y}</option>`).join('')}
+          </select>
+        </div>
+        <div class="filter-fg"><label>月</label>
+          <select class="filter-select" onchange="recFilter.month=this.value;renderRecords()">
+            <option value="">全部月份</option>
+            ${MONTH_OPTS.map(m=>`<option value="${m}" ${recFilter.month===m?'selected':''}>${parseInt(m)}月</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-fg"><label>類別</label>
+          <select class="filter-select" onchange="recFilter.cat=this.value;renderRecords()">
+            <option value="">全部類別</option>
+            ${FILTER_CATS.map(k=>`<option value="${k}" ${recFilter.cat===k?'selected':''}>${CAT[k].label}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="filter-row">
+        <button class="filter-btn" style="flex:1" onclick="recFilter={year:'',month:'',cat:''};renderRecords()">清除篩選</button>
+        <button class="filter-btn on" style="flex:0 0 60px" onclick="toggleRecFilterPanel()">收合</button>
+      </div>
+    </div>`;
+  } else if(active){
+    el.style.display='block';
+    el.innerHTML=`<div class="filter-chip">
+      <span onclick="toggleRecFilterPanel()">🔍 篩選中：${filterLabel(recFilter)} ›</span>
+      <button onclick="recFilter={year:'',month:'',cat:''};renderRecords()">✕ 清除</button>
+    </div>`;
+  } else {
+    el.style.display='none';el.innerHTML='';
+  }
+}
 function renderRecords(){
   document.getElementById('r-group-tag').textContent=S.groupName;
   const q=(document.getElementById('search-inp')?.value||'').toLowerCase().trim();
   let exps=[...S.expenses];
   if(q)exps=exps.filter(e=>e.name.toLowerCase().includes(q)||(e.payer||'').toLowerCase().includes(q));
+  if(recFilter.cat)exps=exps.filter(e=>e.cat===recFilter.cat);
+  if(recFilter.year)exps=exps.filter(e=>e.date.slice(0,4)===recFilter.year);
+  if(recFilter.month)exps=exps.filter(e=>e.date.slice(5,7)===recFilter.month);
+  renderRecFilterUI();
   exps.sort((a,b)=>b.date.localeCompare(a.date));
   const el=document.getElementById('rec-list');
   // 差異警示 banner（無搜尋時才顯示）
@@ -704,7 +981,7 @@ function renderRecords(){
       wbEl.innerHTML='';
     }
   }
-  if(!exps.length){el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>${q?'找不到符合的記錄':'尚無支出記錄<br>點擊下方 + 新增第一筆'}</p></div>`;return;}
+  if(!exps.length){el.innerHTML=`<div class="empty"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>${(q||recFilter.year||recFilter.month||recFilter.cat)?'找不到符合的記錄':'尚無支出記錄<br>點擊下方 + 新增第一筆'}</p></div>`;return;}
   const groups={};
   exps.forEach(e=>{if(!groups[e.date])groups[e.date]=[];groups[e.date].push(e);});
   el.innerHTML=Object.entries(groups).map(([date,list])=>{
@@ -715,7 +992,7 @@ function renderRecords(){
       const _icon=catIcon(exp.cat||'other').replace('</div>',_warn+'</div>');
       const _oidx=S.expenses.indexOf(exp);
       const _oidxVal=_oidx===-1?`'${exp.id}'`:_oidx;
-      return`<div class="ri${isS?' settle-rec':''}" onclick="openAddModal(${_oidxVal})">${_icon}<div class="ri-body"><div class="ri-name">${exp.name}</div><div class="ri-sub">${c.label}${exp.notes?' · '+exp.notes:''}</div></div><div class="ri-right"><div class="ri-amt">${S.currency}${exp.amount.toLocaleString()}</div>${!isS?`<div class="payer-badge" style="background:${payerColor(exp.payer).bg};color:${payerColor(exp.payer).color}">${exp.payer} 付款</div>`:''}</div></div>`;
+      return`<div class="ri${isS?' settle-rec':''}" data-eid="${exp.id}" onclick="openAddModal(${_oidxVal})">${_icon}<div class="ri-body"><div class="ri-name">${exp.name}</div><div class="ri-sub">${c.label}${exp.notes?' · '+exp.notes:''}</div></div><div class="ri-right"><div class="ri-amt">${S.currency}${exp.amount.toLocaleString()}</div>${!isS?`<div class="payer-badge" style="background:${payerColor(exp.payer).bg};color:${payerColor(exp.payer).color}">${exp.payer} 付款</div>`:''}</div></div>`;
     }).join('');
     return`<div class="dglbl">${y}年${parseInt(m)}月${parseInt(d)}日</div><div class="card" style="padding:4px 14px">${rows}</div>`;
   }).join('');
@@ -723,7 +1000,7 @@ function renderRecords(){
 
 
 // ── DONUT CHART ────────────────────────────────────────────────
-function renderDonut(data,total){
+function renderDonut(data,total,ctx){
   const R=56,C=2*Math.PI*R;
   let offset=0;
   const segs=data.map(([k,v])=>{
@@ -743,7 +1020,8 @@ function renderDonut(data,total){
   </svg>`;
   const legend=data.map(([k,v])=>{
     const c=CAT[k]||CAT.other,pct=Math.round(v/total*100);
-    return`<div style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border)">
+    const clickAttr=ctx?` onclick="goCategoryRecords('${k}','${ctx}')" style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border);cursor:pointer"`:` style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--border)"`;
+    return`<div${clickAttr}>
       <div style="width:9px;height:9px;border-radius:50%;background:${c.color};flex-shrink:0"></div>
       <span style="font-size:13px;font-weight:500;flex:1">${c.label}</span>
       <span style="font-size:11px;color:var(--muted);min-width:28px;text-align:right">${pct}%</span>
@@ -756,6 +1034,8 @@ function renderDonut(data,total){
 // ── STATS ──────────────────────────────────────────────────────
 function renderStats(){
   document.getElementById('s-month-lbl').textContent=fmtM(statMonth);
+  document.getElementById('s-month-chips').innerHTML=chipsOpen.stats?monthChipsHtml(statMonth,'stats-chips'):'';
+  if(chipsOpen.stats)scrollChipIntoView('stats-chips');
   // trend
   const months=[];
   for(let i=5;i>=0;i--){const d=new Date(statMonth.getFullYear(),statMonth.getMonth()-i,1);const exps=S.expenses.filter(e=>inM(e,d)&&e.type!=='settlement');months.push({label:`${d.getMonth()+1}月`,total:exps.reduce((s,e)=>s+e.amount,0),isCur:i===0});}
@@ -775,13 +1055,247 @@ function renderStats(){
   else{
     const bycat={};exps.forEach(e=>{bycat[e.cat]=(bycat[e.cat]||0)+e.amount;});
     const sorted=Object.entries(bycat).sort((a,b)=>b[1]-a[1]);
-    document.getElementById('cat-chart').innerHTML=renderDonut(sorted,total);
+    document.getElementById('cat-chart').innerHTML=renderDonut(sorted,total,'split');
   }
   // members
   const bymbr={};S.members.forEach(m=>bymbr[m]=0);exps.forEach(exp=>exp.splitDetails.forEach(d=>{bymbr[d.name]=(bymbr[d.name]||0)+d.amount;}));
   const maxM=Math.max(...Object.values(bymbr),1);
   const sorted=Object.entries(bymbr).filter(([,v])=>v>0).sort((a,b)=>b[1]-a[1]);
   document.getElementById('mbr-chart').innerHTML=sorted.length?sorted.map(([m,v])=>`<div class="mspend-row">${mAvEl(m,34)}<div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px;font-weight:600">${m}</span><span style="font-size:13px;font-weight:700;color:var(--blue)">${S.currency}${Math.round(v).toLocaleString()}</span></div><div style="background:var(--bg);border-radius:4px;height:6px;overflow:hidden"><div style="height:100%;width:${Math.round(v/maxM*100)}%;background:var(--blue);border-radius:4px"></div></div></div></div>`).join(''):emptyHtml('尚無資料');
+}
+
+// ── PERSONAL LEDGER（獨立子模式：總覽 / 紀錄 / 統計 三個內部頁籤）──────
+let PTAB='home'; // home/records/stats
+let perStatMonth=new Date();
+let _pRecordsQ='';
+let prFilter={year:'',month:'',cat:''}; // 年/月/類別篩選，皆為空字串代表不篩選
+let prFilterOpen=false; // 篩選面板是否展開
+function myExpenseShare(e){
+  if(!myMember)return 0;
+  const d=(e.splitDetails||[]).find(x=>x.name===myMember);
+  return d?d.amount:0;
+}
+// dt 為 null/undefined 時回傳「所有時間」的紀錄；否則只回傳該月份
+function personalCombinedList(dt){
+  const list=[];
+  S.expenses.forEach(e=>{
+    if(e.type==='settlement')return;
+    if(dt&&!inM(e,dt))return;
+    const share=myExpenseShare(e);
+    if(share>0)list.push({id:e.id,source:'split',name:e.name,cat:e.cat,date:e.date,amount:share,notes:e.notes});
+  });
+  (S.personalExpenses||[]).forEach(p=>{
+    if(dt&&!inM(p,dt))return;
+    list.push({id:p.id,source:'personal',name:p.name,cat:p.cat,date:p.date,amount:p.amount,notes:p.notes});
+  });
+  return list;
+}
+function peRowHtml(x){
+  const c=CAT[x.cat]||CAT.other;
+  const tag=x.source==='split'?'<span class="src-tag split">分帳</span>':'<span class="src-tag personal">個人</span>';
+  const clickAttr=x.source==='personal'?`onclick="openPersonalModal('${x.id}')"`:`onclick="goToSplitExpense('${x.id}')"`;
+  return`<div class="ri" ${clickAttr}>${catIcon(x.cat||'other')}<div class="ri-body"><div class="ri-name">${x.name}</div><div class="ri-sub">${c.label}${x.notes?' · '+x.notes:''}</div></div><div class="ri-right"><div class="ri-amt">${S.currency}${Math.round(x.amount).toLocaleString()}</div>${tag}</div></div>`;
+}
+function peGroupedListHtml(list){
+  if(!list.length)return emptyHtml('尚無花費紀錄');
+  const sorted=[...list].sort((a,b)=>b.date.localeCompare(a.date));
+  const groups={};
+  sorted.forEach(x=>{if(!groups[x.date])groups[x.date]=[];groups[x.date].push(x);});
+  return Object.entries(groups).map(([date,items])=>{
+    const[y,m,d]=date.split('-');
+    const rows=items.map(peRowHtml).join('');
+    return`<div class="dglbl">${y}年${parseInt(m)}月${parseInt(d)}日</div><div class="card" style="padding:4px 14px">${rows}</div>`;
+  }).join('');
+}
+function pGoTab(t){if(t==='records'){prFilter={year:'',month:'',cat:''};prFilterOpen=false;}PTAB=t;renderPersonalApp();}
+function renderPersonalApp(){
+  document.querySelectorAll('#bnav-p .ni[data-pt]').forEach(b=>b.classList.toggle('active',b.dataset.pt===PTAB));
+  const titleEl=document.getElementById('p-title');
+  if(titleEl)titleEl.textContent=PTAB==='home'?'總覽':PTAB==='records'?'紀錄':'統計';
+  const c=document.getElementById('p-content');
+  if(!c)return;
+  if(PTAB==='home'){c.innerHTML=pRenderHome();if(chipsOpen.phome)scrollChipIntoView('p-home-chips');}
+  else if(PTAB==='records'){c.innerHTML=pRenderRecords();refocusPRSearch();}
+  else{c.innerHTML=pRenderStats();if(chipsOpen.pstats)scrollChipIntoView('p-stats-chips');}
+}
+function pRenderHome(){
+  const list=personalCombinedList(perMonth);
+  const splitSum=list.filter(x=>x.source==='split').reduce((s,x)=>s+x.amount,0);
+  const personalSum=list.filter(x=>x.source==='personal').reduce((s,x)=>s+x.amount,0);
+  const total=splitSum+personalSum;
+  const warn=!myMember?`<div class="warn-banner">
+      <div class="warn-title">⚠️ 尚未設定「我是誰」</div>
+      <div style="font-size:12px;color:#B45309;margin-bottom:8px">請先回到主app的「設定」頁選擇你是分帳成員中的哪一位，才能自動抓出屬於你的分攤金額。</div>
+      <button class="btn bprimary bsm" onclick="switchAppMode('split');navTo('sc-settings')">前往設定</button>
+    </div>`:'';
+  const recent=[...list].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  return`${warn}
+    <div class="mnav">
+      <button class="marr" onclick="changePerMonth(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="mlbl" onclick="toggleMonthChips('phome')">${fmtM(perMonth)}</span>
+      <button class="marr" onclick="changePerMonth(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+    ${chipsOpen.phome?monthChipsHtml(perMonth,'p-home-chips'):''}
+    <div class="sbanner">
+      <div class="sb-tag">本月個人總花費</div>
+      <div class="sb-total">${S.currency}${Math.round(total).toLocaleString()}</div>
+      <div class="sb-grid">
+        <div class="sb-cell"><div class="l">分帳分攤</div><div class="v">${S.currency}${Math.round(splitSum).toLocaleString()}</div></div>
+        <div class="sb-cell"><div class="l">個人消費</div><div class="v">${S.currency}${Math.round(personalSum).toLocaleString()}</div></div>
+        <div class="sb-cell"><div class="l">筆數</div><div class="v">${list.length} 筆</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div style="display:flex;align-items:center;margin-bottom:12px"><div class="ct" style="margin:0">最近紀錄</div><button class="clink" onclick="pGoTab('records')">查看全部 ›</button></div>
+      ${recent.length?recent.map(peRowHtml).join(''):emptyHtml('本月尚無花費')}
+    </div>`;
+}
+function changePerMonth(d){perMonth=new Date(perMonth.getFullYear(),perMonth.getMonth()+d,1);renderPersonalApp();}
+function togglePRFilterPanel(){prFilterOpen=!prFilterOpen;renderPersonalApp();}
+function pRenderFilterUI(allList){
+  const active=!!(prFilter.year||prFilter.month||prFilter.cat);
+  if(prFilterOpen){
+    const years=[...new Set(allList.map(x=>x.date.slice(0,4)))].sort().reverse();
+    return`<div class="filter-panel">
+      <div class="filter-row">
+        <div class="filter-fg"><label>年</label>
+          <select class="filter-select" onchange="prFilter.year=this.value;renderPersonalApp()">
+            <option value="">全部年份</option>
+            ${years.map(y=>`<option value="${y}" ${prFilter.year===y?'selected':''}>${y}</option>`).join('')}
+          </select>
+        </div>
+        <div class="filter-fg"><label>月</label>
+          <select class="filter-select" onchange="prFilter.month=this.value;renderPersonalApp()">
+            <option value="">全部月份</option>
+            ${MONTH_OPTS.map(m=>`<option value="${m}" ${prFilter.month===m?'selected':''}>${parseInt(m)}月</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="filter-row">
+        <div class="filter-fg"><label>類別</label>
+          <select class="filter-select" onchange="prFilter.cat=this.value;renderPersonalApp()">
+            <option value="">全部類別</option>
+            ${FILTER_CATS.map(k=>`<option value="${k}" ${prFilter.cat===k?'selected':''}>${CAT[k].label}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="filter-row">
+        <button class="filter-btn" style="flex:1" onclick="prFilter={year:'',month:'',cat:''};renderPersonalApp()">清除篩選</button>
+        <button class="filter-btn on" style="flex:0 0 60px" onclick="togglePRFilterPanel()">收合</button>
+      </div>
+    </div>`;
+  }
+  if(active){
+    return`<div class="filter-chip">
+      <span onclick="togglePRFilterPanel()">🔍 篩選中：${filterLabel(prFilter)} ›</span>
+      <button onclick="prFilter={year:'',month:'',cat:''};renderPersonalApp()">✕ 清除</button>
+    </div>`;
+  }
+  return'';
+}
+function pRenderRecords(){
+  const q=(_pRecordsQ||'').toLowerCase().trim();
+  const allList=personalCombinedList(null); // 全部時間（篩選面板的年月選單要用未篩選前的全部資料）
+  let list=allList;
+  if(q)list=list.filter(x=>x.name.toLowerCase().includes(q));
+  if(prFilter.cat)list=list.filter(x=>x.cat===prFilter.cat);
+  if(prFilter.year)list=list.filter(x=>x.date.slice(0,4)===prFilter.year);
+  if(prFilter.month)list=list.filter(x=>x.date.slice(5,7)===prFilter.month);
+  return`${pRenderFilterUI(allList)}<div class="searchbar compact">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor"/></svg>
+      <input type="text" id="pr-search-inp" placeholder="搜尋品項…" value="${_pRecordsQ.replace(/"/g,'&quot;')}" oninput="onPRecordsSearch(this.value)">
+      <button class="searchbar-filter-btn" onclick="togglePRFilterPanel()" title="篩選"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></button>
+    </div>
+    ${peGroupedListHtml(list)}`;
+}
+function onPRecordsSearch(v){_pRecordsQ=v;renderPersonalApp();}
+function refocusPRSearch(){const inp=document.getElementById('pr-search-inp');if(inp){inp.focus();inp.setSelectionRange(inp.value.length,inp.value.length);}}
+function pRenderStats(){
+  const list=personalCombinedList(perStatMonth);
+  const total=list.reduce((s,x)=>s+x.amount,0);
+  const months=[];
+  for(let i=5;i>=0;i--){
+    const d=new Date(perStatMonth.getFullYear(),perStatMonth.getMonth()-i,1);
+    const t=personalCombinedList(d).reduce((s,x)=>s+x.amount,0);
+    months.push({label:`${d.getMonth()+1}月`,total:t,isCur:i===0});
+  }
+  const maxT=Math.max(...months.map(m=>m.total),1);
+  const trendHtml=`<div class="bar-chart">${months.map(m=>{
+    const h=Math.max(Math.round((m.total/maxT)*60),m.total>0?4:2);
+    const v=m.total>0?S.currency+(m.total>=10000?(m.total/10000).toFixed(1)+'w':m.total>=1000?(m.total/1000).toFixed(0)+'k':m.total.toLocaleString()):'';
+    return`<div class="bar-col">${v?`<div class="bar-val" style="bottom:${h+16}px">${v}</div>`:''}<div class="bar-fill${m.isCur?' cur':''}" style="height:${h}px"></div><div class="bar-lbl">${m.label}</div></div>`;
+  }).join('')}</div>`;
+  let catHtml;
+  if(!total)catHtml=emptyHtml('本月尚無個人花費');
+  else{
+    const bycat={};list.forEach(x=>{bycat[x.cat]=(bycat[x.cat]||0)+x.amount;});
+    const sorted=Object.entries(bycat).sort((a,b)=>b[1]-a[1]);
+    catHtml=renderDonut(sorted,total,'personal');
+  }
+  const splitSum=list.filter(x=>x.source==='split').reduce((s,x)=>s+x.amount,0);
+  const personalSum=list.filter(x=>x.source==='personal').reduce((s,x)=>s+x.amount,0);
+  const maxS=Math.max(splitSum,personalSum,1);
+  const srcHtml=(splitSum+personalSum)?`
+    <div class="mspend-row"><div style="width:34px;height:34px;border-radius:50%;background:var(--blue-soft);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">🧾</div><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px;font-weight:600">分帳分攤</span><span style="font-size:13px;font-weight:700;color:var(--blue)">${S.currency}${Math.round(splitSum).toLocaleString()}</span></div><div style="background:var(--bg);border-radius:4px;height:6px;overflow:hidden"><div style="height:100%;width:${Math.round(splitSum/maxS*100)}%;background:var(--blue);border-radius:4px"></div></div></div></div>
+    <div class="mspend-row"><div style="width:34px;height:34px;border-radius:50%;background:var(--green-soft);display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0">💰</div><div style="flex:1;min-width:0"><div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:13px;font-weight:600">個人消費</span><span style="font-size:13px;font-weight:700;color:var(--green)">${S.currency}${Math.round(personalSum).toLocaleString()}</span></div><div style="background:var(--bg);border-radius:4px;height:6px;overflow:hidden"><div style="height:100%;width:${Math.round(personalSum/maxS*100)}%;background:var(--green);border-radius:4px"></div></div></div></div>`
+    :emptyHtml('尚無資料');
+  return`<div class="mnav">
+      <button class="marr" onclick="changePerStatMonth(-1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <span class="mlbl" onclick="toggleMonthChips('pstats')">${fmtM(perStatMonth)}</span>
+      <button class="marr" onclick="changePerStatMonth(1)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><polyline points="9 18 15 12 9 6"/></svg></button>
+    </div>
+    ${chipsOpen.pstats?monthChipsHtml(perStatMonth,'p-stats-chips'):''}
+    <div class="card"><div class="ct" style="margin-bottom:4px">近 6 個月趨勢</div><div style="padding-top:22px">${trendHtml}</div></div>
+    <div class="card"><div class="ct">分類分布</div>${catHtml}</div>
+    <div class="card"><div class="ct">來源分布</div>${srcHtml}</div>`;
+}
+function changePerStatMonth(d){perStatMonth=new Date(perStatMonth.getFullYear(),perStatMonth.getMonth()+d,1);renderPersonalApp();}
+function openPersonalModal(idOrNull){
+  let p=null;
+  if(idOrNull){p=(S.personalExpenses||[]).find(x=>String(x.id)===String(idOrNull))||null;}
+  editingPersonalId=p?p.id:null;
+  document.getElementById('pe-modal-title').textContent=p?'編輯個人消費':'新增個人消費';
+  document.getElementById('pe-submit-btn').textContent=p?'儲存修改':'確認新增';
+  document.getElementById('pe-delete-wrap').style.display=p?'block':'none';
+  document.getElementById('pe-date').value=(p?.date)||new Date().toISOString().slice(0,10);
+  document.getElementById('pe-name').value=(p?.name)||'';
+  document.getElementById('pe-cat').value=(p?.cat)||'food';
+  document.getElementById('pe-amount').value=(p?.amount)||'';
+  document.getElementById('pe-notes').value=(p?.notes)||'';
+  document.getElementById('modal-personal-exp').classList.add('open');
+}
+function submitPersonalExpense(){
+  const name=document.getElementById('pe-name').value.trim();
+  const amount=parseFloat(document.getElementById('pe-amount').value);
+  const date=document.getElementById('pe-date').value,cat=document.getElementById('pe-cat').value;
+  const notes=document.getElementById('pe-notes').value.trim();
+  if(!name){toast('請輸入品項名稱');return;}
+  if(!amount||amount<=0){toast('請輸入有效金額');return;}
+  if(!date){toast('請選擇日期');return;}
+  if(!S.personalExpenses)S.personalExpenses=[];
+  const obj={id:editingPersonalId||nextId(),name,amount,date,cat,notes};
+  if(editingPersonalId){
+    const idx=S.personalExpenses.findIndex(x=>String(x.id)===String(editingPersonalId));
+    const before=idx>=0?{...S.personalExpenses[idx]}:null;
+    if(idx>=0)S.personalExpenses[idx]=obj;else S.personalExpenses.push(obj);
+    logChange({action:'edit',target:'personal',expId:String(obj.id),snapshot:before,label:`修改「${obj.name}」`,detail:before?diffDetail(before,obj):'已更新'});
+  } else {
+    S.personalExpenses.push(obj);
+    logChange({action:'add',target:'personal',expId:String(obj.id),label:`新增「${obj.name}」`,detail:`${S.currency}${obj.amount.toLocaleString()} · ${(CAT[obj.cat]||CAT.other).label}`});
+  }
+  save();closeModal('modal-personal-exp');
+  const[y,m]=date.split('-').map(Number);perMonth=new Date(y,m-1,1);
+  renderPersonalApp();toast(editingPersonalId?'✓ 已更新':'✓ 已新增');
+}
+function deletePersonalExpense(){
+  if(!editingPersonalId||!confirm('確定刪除？'))return;
+  const idx=(S.personalExpenses||[]).findIndex(x=>String(x.id)===String(editingPersonalId));
+  if(idx>=0){
+    const snap={...S.personalExpenses[idx]};
+    S.personalExpenses.splice(idx,1);
+    logChange({action:'del',target:'personal',snapshot:snap,label:`刪除「${snap.name}」`,detail:`${S.currency}${snap.amount.toLocaleString()} · ${(CAT[snap.cat]||CAT.other).label}`});
+  }
+  save();closeModal('modal-personal-exp');renderPersonalApp();toast('已刪除');
 }
 
 // ── BALANCE ────────────────────────────────────────────────────
@@ -896,10 +1410,11 @@ function renderChangelog(){
   el.innerHTML=log.map(e=>{
     const dot=e.action==='add'?'add':e.action==='edit'?'edit':e.action==='del'?'del':e.action==='settle'?'settle':'imp';
     const canUndo=e.action!=='settle';
+    const srcTag=e.target==='personal'?'<span class="src-tag personal" style="margin-left:6px">個人</span>':'<span class="src-tag split" style="margin-left:6px">分帳</span>';
     return`<div class="cl-item">
       <div class="cl-dot ${dot}">${CL_ICONS[dot]||'📝'}</div>
       <div class="cl-body">
-        <div class="cl-meta">${fmtLogTime(e.time)}${e.user?'　'+e.user:''}</div>
+        <div class="cl-meta">${fmtLogTime(e.time)}${e.user?'　'+e.user:''}${srcTag}</div>
         <div class="cl-action">${e.label||e.expName||''}</div>
         ${e.detail?`<div class="cl-detail">${e.detail}</div>`:''}
       </div>
@@ -914,23 +1429,28 @@ function undoChange(logId){
   const entry=log.find(e=>e.logId===logId);
   if(!entry){toast('找不到此紀錄');return;}
   const action=entry.action;
+  const isPersonal=entry.target==='personal';
+  if(isPersonal&&!S.personalExpenses)S.personalExpenses=[];
+  const list=isPersonal?S.personalExpenses:S.expenses;
   if(action==='add'){
-    const idx=S.expenses.findIndex(e=>String(e.id)===String(entry.expId));
-    if(idx>=0)S.expenses.splice(idx,1);
+    const idx=list.findIndex(e=>String(e.id)===String(entry.expId));
+    if(idx>=0)list.splice(idx,1);
     else{toast('此筆資料已不存在');return;}
   } else if(action==='edit'){
-    const idx=S.expenses.findIndex(e=>String(e.id)===String(entry.snapshot?.id));
-    if(idx>=0)S.expenses[idx]=entry.snapshot;
+    const idx=list.findIndex(e=>String(e.id)===String(entry.snapshot?.id));
+    if(idx>=0)list[idx]=entry.snapshot;
     else{toast('此筆資料已不存在');return;}
   } else if(action==='del'){
-    S.expenses.push(entry.snapshot);
+    list.push(entry.snapshot);
   } else if(action==='imp'){
     const ids=new Set((entry.importIds||[]).map(String));
     S.expenses=S.expenses.filter(e=>!ids.has(String(e.id)));
   }
   const newLog=log.filter(e=>e.logId!==logId);
   saveLog(newLog);
-  save();renderHome();renderRecords();renderChangelog();
+  save();
+  if(isPersonal){renderPersonalApp();}else{renderHome();renderRecords();}
+  renderChangelog();
   toast('✓ 已復原');
 }
 function buildNameSuggestions(cat){
@@ -1008,7 +1528,7 @@ function renderMembers(){
 }
 function saveCur(){S.currency=document.getElementById('cur-sel').value;save();renderHome();}
 function saveGrp(){S.groupName=document.getElementById('grp-inp').value||'我的群組';save();}
-function clearAll(){if(!confirm('確定清除此群組的所有資料？'))return;const gname=S.groupName;S={members:[],expenses:[],currency:'NT$',groupName:gname,avatars:{},changelog:[]};save();renderHome();renderRecords();renderMembers();toast('已清除此群組資料');}
+function clearAll(){if(!confirm('確定清除此群組的所有資料？'))return;const gname=S.groupName;S={members:[],expenses:[],personalExpenses:[],currency:'NT$',groupName:gname,avatars:{},changelog:[]};save();renderHome();renderRecords();renderMembers();toast('已清除此群組資料');}
 
 // ── IMPORT ─────────────────────────────────────────────────────
 const dz=document.getElementById('dz');
@@ -1269,7 +1789,7 @@ function importAppData(file){
       if(!confirm(`確定載入備份？
 ${d.members.length} 位成員・${d.expenses.length} 筆支出
 這將覆蓋目前所有資料`))return;
-      S={members:[],expenses:[],currency:'NT$',groupName:'我的群組',avatars:{},...d};
+      S={members:[],expenses:[],personalExpenses:[],currency:'NT$',groupName:'我的群組',avatars:{},...d};
       save();renderHome();renderRecords();renderMembers();
       document.getElementById('cur-sel').value=S.currency;
       document.getElementById('grp-inp').value=S.groupName;
@@ -1336,7 +1856,7 @@ function conflictChoose(choice){
     toast('✓ 已上傳本機資料');
   } else {
     if(_remoteSnapshot){
-      S={members:[],expenses:[],currency:'NT$',groupName:'我的群組',avatars:{},..._remoteSnapshot};
+      S={members:[],expenses:[],personalExpenses:[],currency:'NT$',groupName:'我的群組',avatars:{},..._remoteSnapshot};
       S._updatedAt=_remoteSnapshot._updatedAt||Date.now();
       localStorage.setItem('splitbill_v3',JSON.stringify(S));
       renderHome();renderRecords();
@@ -1406,7 +1926,7 @@ function startRoomSync(){
       _firstLoad=false;
       // 只有 Firebase 資料比本機新才覆蓋
       if(fbTime<=localTime){setSyncStatus('ok','已同步');_updateSyncUI(fbTime||Date.now());return;}
-      S={members:[],expenses:[],currency:'NT$',groupName:'我的群組',avatars:{},...d};
+      S={members:[],expenses:[],personalExpenses:[],currency:'NT$',groupName:'我的群組',avatars:{},...d};
       if(S.expenses){const {result,changed}=deduplicateIds(S.expenses);S.expenses=result;}
       localStorage.setItem('splitbill_v3',JSON.stringify(S));
       const sc=document.querySelector('.screen.active')?.id;
@@ -1512,8 +2032,8 @@ function switchGroup(id){
   activeGroupId=id;
   const saved=localStorage.getItem('splitbill_v3_'+id);
   const grp=groups.find(g=>g.id===id);
-  S=saved?{members:[],expenses:[],currency:'NT$',groupName:'新群組',avatars:{},...JSON.parse(saved)}
-         :{members:[],expenses:[],currency:'NT$',groupName:grp?.name||'新群組',avatars:{}};
+  S=saved?{members:[],expenses:[],personalExpenses:[],currency:'NT$',groupName:'新群組',avatars:{},...JSON.parse(saved)}
+         :{members:[],expenses:[],personalExpenses:[],currency:'NT$',groupName:grp?.name||'新群組',avatars:{}};
   if(S.expenses){const {result}=deduplicateIds(S.expenses);S.expenses=result;}
   _saveGroups();
   // Firebase 切換
@@ -1534,7 +2054,7 @@ function createGroup(){
   if(!name?.trim())return;
   const id='g_'+Date.now();
   groups.push({id,name:name.trim()});
-  const newS={members:[],expenses:[],currency:'NT$',groupName:name.trim(),avatars:{},roomCode:''};
+  const newS={members:[],expenses:[],personalExpenses:[],currency:'NT$',groupName:name.trim(),avatars:{},roomCode:''};
   localStorage.setItem('splitbill_v3_'+id,JSON.stringify(newS));
   _saveGroups();
   switchGroup(id);
@@ -1627,12 +2147,25 @@ let _tt;
 function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');clearTimeout(_tt);_tt=setTimeout(()=>el.classList.remove('show'),2500);}
 function emptyHtml(msg){return`<div class="empty"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><p>${msg}</p></div>`;}
 
+// ── 進入app：先問要記帳還是分帳 ──────────────────────────────
+function showModeSelect(){
+  const scr=document.getElementById('mode-select-screen');
+  if(scr)scr.style.display='flex';
+}
+function chooseAppMode(mode){
+  const scr=document.getElementById('mode-select-screen');
+  if(scr)scr.style.display='none';
+  if(mode==='personal')switchAppMode('personal');
+  else switchAppMode('split');
+  setTimeout(initMemberSelect,300); // 選完模式後才問「你是哪位」
+}
+
 // ── INIT ───────────────────────────────────────────────────────
 load();
 curMonth=new Date();statMonth=new Date();
 renderHome();renderRecords();
 initFirebase();
-setTimeout(initMemberSelect,1200); // 等 Firebase 初始化後再問
+showModeSelect(); // 每次進入app都先問要記帳還是分帳
 const _lsT=localStorage.getItem('splitbill_lastSync');
 if(_lsT)_updateSyncUI(parseInt(_lsT));
 </script>

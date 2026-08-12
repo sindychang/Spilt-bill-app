@@ -220,7 +220,7 @@ body.mode-personal .sbanner{background:linear-gradient(145deg,#8A6D1C 0%,#A6842A
 .bgreen{background:var(--green);color:#fff}
 .moverlay{position:fixed;inset:0;background:rgba(15,23,42,.5);display:none;align-items:flex-end;justify-content:center;z-index:200}
 .moverlay.open{display:flex}
-.msheet{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:480px;max-height:93vh;overflow-y:auto;overflow-x:hidden;padding:16px 18px 32px;animation:sup .24s ease-out}
+.msheet{background:var(--card);border-radius:22px 22px 0 0;width:100%;max-width:480px;max-height:93vh;max-height:93dvh;overflow-y:auto;overflow-x:hidden;padding:16px 18px 32px;animation:sup .24s ease-out}
 @keyframes sup{from{transform:translateY(100%)}to{transform:translateY(0)}}
 .mhandle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 14px}
 .mtitle{font-size:17px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:8px}
@@ -688,8 +688,16 @@ function load(){
 }
 function save(){
   S._updatedAt=Date.now();
-  localStorage.setItem('splitbill_v3',JSON.stringify(S));
-  if(activeGroupId) localStorage.setItem('splitbill_v3_'+activeGroupId,JSON.stringify(S));
+  try{
+    const json=JSON.stringify(S);
+    localStorage.setItem('splitbill_v3',json);
+    if(activeGroupId) localStorage.setItem('splitbill_v3_'+activeGroupId,json);
+  }catch(e){
+    // 本機儲存空間不足(常見於手機瀏覽器)或其他寫入失敗時,不能讓整個新增/編輯流程卡死——
+    // 雲端(Firebase)仍會照常同步,只是這台裝置的本機備份這次沒存到,下次开啟時可能會抓雲端版本回來覆蓋。
+    console.warn('本機儲存失敗',e);
+    toast('⚠️ 本機儲存空間不足,已改用雲端同步');
+  }
   if(db&&roomCode){
     _skipNext=true;
     db.ref('rooms/'+roomCode).set(S)
@@ -808,6 +816,18 @@ document.addEventListener('click',e=>{
   const el=e.target.closest('.c-scroll');
   if(el&&el._suppressClick){e.stopPropagation();e.preventDefault();}
 },true);
+
+// ── 手機鍵盤彈出時，讓彈窗（.msheet）的可視高度跟著縮小 ──────────
+// iOS 部分版本的 vh/dvh 不會即時反映鍵盤高度，導致彈窗下方按鈕（確認新增/儲存修改/刪除）被鍵盤蓋住點不到。
+// 用 visualViewport 監聽鍵盤實際佔用的高度，動態調整 .msheet 的 max-height，確保按鈕永遠在可視範圍內、可捲動到。
+if(window.visualViewport){
+  const _adjustSheetHeight=()=>{
+    const h=Math.round(window.visualViewport.height*0.93);
+    document.querySelectorAll('.msheet').forEach(el=>{el.style.maxHeight=h+'px';});
+  };
+  window.visualViewport.addEventListener('resize',_adjustSheetHeight);
+  window.visualViewport.addEventListener('scroll',_adjustSheetHeight);
+}
 function onMonthChipClick(id,y,m){
   if(id==='home-chips'){curMonth=new Date(y,m,1);renderHome();}
   else if(id==='stats-chips'){statMonth=new Date(y,m,1);renderStats();}
@@ -1288,8 +1308,11 @@ function submitPersonalExpense(){
     logChange({action:'add',target:'personal',expId:String(obj.id),label:`新增「${obj.name}」`,detail:`${S.currency}${obj.amount.toLocaleString()} · ${(CAT[obj.cat]||CAT.other).label}`});
   }
   save();closeModal('modal-personal-exp');
-  const[y,m]=date.split('-').map(Number);perMonth=new Date(y,m-1,1);
-  renderPersonalApp();toast(editingPersonalId?'✓ 已更新':'✓ 已新增');
+  try{
+    const[y,m]=date.split('-').map(Number);perMonth=new Date(y,m-1,1);
+    renderPersonalApp();
+  }catch(e){console.error('renderPersonalApp 失敗',e);}
+  toast(editingPersonalId?'✓ 已更新':'✓ 已新增');
 }
 function deletePersonalExpense(){
   if(!editingPersonalId||!confirm('確定刪除？'))return;
@@ -1516,8 +1539,11 @@ function submitExpense(){
     logChange({action:'add',expId:String(obj.id),label:`新增「${obj.name}」`,detail:`${S.currency}${obj.amount.toLocaleString()} · ${(CAT[obj.cat]||CAT.other).label}`});
   }
   save();closeModal('modal-exp');
-  const[y,m]=date.split('-').map(Number);curMonth=new Date(y,m-1,1);
-  renderHome();renderRecords();toast(editingId?'✓ 已更新支出':'✓ 已新增支出');
+  try{
+    const[y,m]=date.split('-').map(Number);curMonth=new Date(y,m-1,1);
+    renderHome();renderRecords();
+  }catch(e){console.error('renderHome/renderRecords 失敗',e);}
+  toast(editingId?'✓ 已更新支出':'✓ 已新增支出');
 }
 function deleteExpense(){if(!editingId||!confirm('確定刪除？'))return;const _di=S.expenses.findIndex(e=>String(e.id)===String(editingId));
   if(_di>=0){const _snap={...S.expenses[_di]};S.expenses.splice(_di,1);logChange({action:'del',snapshot:_snap,label:`刪除「${_snap.name}」`,detail:`${S.currency}${_snap.amount.toLocaleString()} · ${(CAT[_snap.cat]||CAT.other).label}`});}

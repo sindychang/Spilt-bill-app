@@ -1115,7 +1115,11 @@ function renderPersonalApp(){
   const c=document.getElementById('p-content');
   if(!c)return;
   if(PTAB==='home'){c.innerHTML=pRenderHome();if(chipsOpen.phome)scrollChipIntoView('p-home-chips');}
-  else if(PTAB==='records'){c.innerHTML=pRenderRecords();refocusPRSearch();}
+  else if(PTAB==='records'){
+    const hadFocus=document.activeElement&&document.activeElement.id==='pr-search-inp'; // 只有「打字中觸發的重繪」才需要還原焦點，切換頁籤點導覽鈕不算
+    c.innerHTML=pRenderRecords();
+    if(hadFocus)refocusPRSearch();
+  }
   else{c.innerHTML=pRenderStats();if(chipsOpen.pstats)scrollChipIntoView('p-stats-chips');}
 }
 function pRenderHome(){
